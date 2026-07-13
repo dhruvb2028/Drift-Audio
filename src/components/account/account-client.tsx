@@ -16,19 +16,25 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface AccountClientProps {
-  name: string;
+  firstName: string | null;
+  displayName: string;
   email: string;
   imageUrl: string;
   memberSince: string;
+  isNewUser: boolean;
 }
 
 export function AccountClient({
-  name,
+  firstName,
+  displayName,
   email,
   imageUrl,
   memberSince,
+  isNewUser,
 }: AccountClientProps) {
   const { openUserProfile, signOut } = useClerk();
+
+  const greeting = isNewUser ? "Welcome to DRIFT AUDIO" : "Welcome back";
 
   const shortcuts = [
     {
@@ -68,13 +74,13 @@ export function AccountClient({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
-            alt={name}
+            alt={displayName}
             className="h-20 w-20 rounded-full border border-white/15 object-cover"
           />
           <div className="min-w-0">
-            <p className="text-sm text-white/50">Welcome back</p>
+            <p className="text-sm text-white/50">{greeting}</p>
             <h1 className="font-display text-3xl font-bold text-white sm:text-4xl">
-              {name}
+              {firstName ?? displayName}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/55">
               {email && <span className="truncate">{email}</span>}
