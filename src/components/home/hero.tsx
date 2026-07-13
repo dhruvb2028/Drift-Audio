@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, ChevronDown } from "lucide-react";
-import { ProductRender } from "@/components/ui/product-render";
+import { HeroHeadphone } from "@/components/home/hero-headphone";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CountUp } from "@/components/ui/count-up";
@@ -124,23 +124,8 @@ export function Hero() {
         </div>
 
         {/* Product visual */}
-        <motion.div
-          style={{ y, opacity, scale }}
-          className="relative z-0 mx-auto w-full max-w-lg"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="animate-float"
-          >
-            <ProductRender
-              kind="headphones"
-              color="#EE1C25"
-              glow
-              className="drop-shadow-[0_40px_80px_rgba(238,28,37,0.35)]"
-            />
-          </motion.div>
+        <motion.div style={{ y, opacity, scale }} className="relative z-0 w-full">
+          <HeroHeadphone />
         </motion.div>
       </div>
 

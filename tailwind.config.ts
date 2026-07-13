@@ -95,6 +95,18 @@ const config: Config = {
           "0%, 100%": { opacity: "0.5" },
           "50%": { opacity: "1" },
         },
+        "hp-rotate": {
+          "0%, 100%": { transform: "rotateY(-14deg)" },
+          "50%": { transform: "rotateY(14deg)" },
+        },
+        ring: {
+          "0%": { transform: "scale(0.5)", opacity: "0.55" },
+          "100%": { transform: "scale(1.9)", opacity: "0" },
+        },
+        eq: {
+          "0%, 100%": { height: "8px" },
+          "50%": { height: "30px" },
+        },
       },
       animation: {
         marquee: "marquee var(--marquee-duration, 32s) linear infinite",
@@ -102,6 +114,9 @@ const config: Config = {
         shimmer: "shimmer 2s infinite",
         "fade-up": "fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both",
         "pulse-glow": "pulse-glow 3s ease-in-out infinite",
+        "hp-rotate": "hp-rotate 9s ease-in-out infinite",
+        ring: "ring 3.2s ease-out infinite",
+        eq: "eq 1s ease-in-out infinite",
       },
     },
   },
