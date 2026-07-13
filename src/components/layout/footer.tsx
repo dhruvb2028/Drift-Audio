@@ -75,6 +75,7 @@ export function Footer() {
                     if (status !== "idle") setStatus("idle");
                   }}
                   placeholder="you@email.com"
+                  suppressHydrationWarning
                   className="h-12 w-full rounded-full border border-white/12 bg-white/[0.04] px-5 text-white placeholder:text-white/35 focus:border-brand/50 focus:outline-none"
                 />
               </div>

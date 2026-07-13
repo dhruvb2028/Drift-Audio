@@ -237,6 +237,7 @@ function ContactField({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        suppressHydrationWarning
         className={cn(
           "h-11 w-full rounded-xl border bg-white/[0.04] px-4 text-white placeholder:text-white/30 focus:outline-none",
           error ? "border-brand/60 focus:border-brand" : "border-white/12 focus:border-brand/50"

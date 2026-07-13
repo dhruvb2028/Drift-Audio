@@ -630,6 +630,7 @@ function Field({
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={!!error}
+        suppressHydrationWarning
         className={cn(
           "h-12 w-full rounded-xl border bg-white/[0.03] px-4 text-white placeholder:text-white/30 transition-all focus:outline-none focus:ring-2",
           error
