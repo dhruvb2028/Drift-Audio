@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Hero } from "@/components/home/hero";
 import { LogoMarquee } from "@/components/home/logo-marquee";
-import { MarqueeTicker } from "@/components/home/marquee-ticker";
 import { CategoryStrip } from "@/components/home/category-strip";
 import { FeaturedGrid } from "@/components/home/featured-grid";
 import { ProductShowcase } from "@/components/home/product-showcase";
@@ -16,7 +15,6 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <MarqueeTicker />
       <LogoMarquee />
       <CategoryStrip />
       <FeaturedGrid />
