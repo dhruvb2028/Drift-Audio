@@ -15,19 +15,19 @@ const COLUMNS = [
   {
     title: "Company",
     links: [
-      { label: "Our Story", href: "#" },
-      { label: "Careers", href: "#" },
-      { label: "Press", href: "#" },
-      { label: "Sustainability", href: "#" },
+      { label: "Our Story", href: "/about" },
+      { label: "Contact", href: "/contact" },
+      { label: "Compare", href: "/compare" },
+      { label: "Wishlist", href: "/wishlist" },
     ],
   },
   {
     title: "Support",
     links: [
-      { label: "Help Center", href: "#" },
+      { label: "Help Center", href: "/contact" },
+      { label: "Track Order", href: "/track" },
       { label: "Warranty", href: "#" },
       { label: "Shipping", href: "#" },
-      { label: "Track Order", href: "#" },
     ],
   },
 ];

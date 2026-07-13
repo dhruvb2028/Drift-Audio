@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,16 +12,22 @@ import {
   ShieldCheck,
   RefreshCw,
   Star,
+  Heart,
 } from "lucide-react";
 import type { Product } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
 import { useCart } from "@/lib/cart-store";
+import { useToast } from "@/lib/toast-store";
+import { useWishlist } from "@/lib/wishlist-store";
+import { useRecentlyViewed } from "@/lib/recently-viewed-store";
+import { isLowStock, getStock } from "@/lib/commerce";
 import { ProductRender } from "@/components/ui/product-render";
 import { PriceTag } from "@/components/ui/price-tag";
 import { RatingStars } from "@/components/ui/rating-stars";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ProductCard } from "@/components/products/product-card";
+import { RecentlyViewed } from "@/components/products/recently-viewed";
 import { cn } from "@/lib/utils";
 
 export function ProductDetail({
@@ -36,12 +42,27 @@ export function ProductDetail({
   const [added, setAdded] = useState(false);
   const add = useCart((s) => s.add);
   const open = useCart((s) => s.open);
+  const pushToast = useToast((s) => s.push);
+  const wished = useWishlist((s) => s.slugs.includes(product.slug));
+  const toggleWish = useWishlist((s) => s.toggle);
+  const trackView = useRecentlyViewed((s) => s.add);
   const category = CATEGORIES.find((c) => c.id === product.category);
+  const lowStock = isLowStock(product.slug);
+
+  useEffect(() => {
+    trackView(product.slug);
+  }, [product.slug, trackView]);
 
   function handleAdd() {
     add(product, color, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 1600);
+    pushToast({
+      message: "Added to cart",
+      description: `${product.name} · ${color.name} · Qty ${qty}`,
+      actionLabel: "View",
+      onAction: open,
+    });
   }
 
   function buyNow() {
@@ -112,12 +133,30 @@ export function ProductDetail({
 
         {/* Info */}
         <div>
-          <span className="text-sm font-medium uppercase tracking-wider text-brand">
-            {category?.label}
-          </span>
-          <h1 className="mt-2 font-display text-4xl font-bold text-white sm:text-5xl">
-            {product.name}
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <span className="text-sm font-medium uppercase tracking-wider text-brand">
+                {category?.label}
+              </span>
+              <h1 className="mt-2 font-display text-4xl font-bold text-white sm:text-5xl">
+                {product.name}
+              </h1>
+            </div>
+            <button
+              onClick={() => toggleWish(product.slug)}
+              aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
+              aria-pressed={wished}
+              className={cn(
+                "mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-all cursor-pointer",
+                wished
+                  ? "border-brand/40 bg-brand/15 text-brand"
+                  : "border-white/12 text-white/60 hover:border-white/25 hover:text-white"
+              )}
+            >
+              <Heart className={cn("h-5 w-5", wished && "fill-current")} />
+            </button>
+          </div>
+
           <div className="mt-3 flex items-center gap-3">
             <RatingStars rating={product.rating} size={18} showValue />
             <span className="text-sm text-white/45">
@@ -129,7 +168,7 @@ export function ProductDetail({
             {product.description}
           </p>
 
-          <div className="mt-6">
+          <div className="mt-6 flex flex-wrap items-center gap-4">
             <PriceTag
               priceINR={product.priceINR}
               priceUSD={product.priceUSD}
@@ -137,6 +176,15 @@ export function ProductDetail({
               mrpUSD={product.mrpUSD}
               size="lg"
             />
+            {lowStock ? (
+              <span className="rounded-full bg-amber-400/10 px-3 py-1 text-sm font-medium text-amber-300">
+                Only {getStock(product.slug)} left
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-sm text-emerald-400">
+                <Check className="h-4 w-4" /> In stock
+              </span>
+            )}
           </div>
 
           {/* Colour */}
@@ -312,6 +360,8 @@ export function ProductDetail({
           </div>
         </section>
       )}
+
+      <RecentlyViewed exclude={product.slug} />
     </div>
   );
 }

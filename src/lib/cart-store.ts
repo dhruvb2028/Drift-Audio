@@ -21,10 +21,12 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
+  couponCode: string | null;
   add: (product: Product, color: ProductColor, qty?: number) => void;
   remove: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clear: () => void;
+  setCoupon: (code: string | null) => void;
   open: () => void;
   close: () => void;
   toggle: () => void;
@@ -35,20 +37,19 @@ export const useCart = create<CartState>()(
     (set) => ({
       items: [],
       isOpen: false,
+      couponCode: null,
       add: (product, color, qty = 1) =>
         set((state) => {
           const id = `${product.slug}__${color.name}`;
           const existing = state.items.find((i) => i.id === id);
           if (existing) {
             return {
-              isOpen: true,
               items: state.items.map((i) =>
                 i.id === id ? { ...i, qty: Math.min(i.qty + qty, 99) } : i
               ),
             };
           }
           return {
-            isOpen: true,
             items: [
               ...state.items,
               {
@@ -75,14 +76,18 @@ export const useCart = create<CartState>()(
             .map((i) => (i.id === id ? { ...i, qty: Math.max(0, Math.min(qty, 99)) } : i))
             .filter((i) => i.qty > 0),
         })),
-      clear: () => set({ items: [] }),
+      clear: () => set({ items: [], couponCode: null }),
+      setCoupon: (code) => set({ couponCode: code }),
       open: () => set({ isOpen: true }),
       close: () => set({ isOpen: false }),
       toggle: () => set((state) => ({ isOpen: !state.isOpen })),
     }),
     {
       name: "drift-cart",
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({
+        items: state.items,
+        couponCode: state.couponCode,
+      }),
     }
   )
 );

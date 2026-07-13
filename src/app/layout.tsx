@@ -4,6 +4,9 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { CartDrawer } from "@/components/layout/cart-drawer";
+import { Toaster } from "@/components/ui/toaster";
+import { QuickView } from "@/components/products/quick-view";
+import { CompareBar } from "@/components/products/compare-bar";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -52,6 +55,9 @@ export default function RootLayout({
         <main className="pt-20">{children}</main>
         <Footer />
         <CartDrawer />
+        <QuickView />
+        <CompareBar />
+        <Toaster />
       </body>
     </html>
   );

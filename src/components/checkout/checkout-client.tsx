@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CheckCircle2, Lock, ShoppingBag, Info } from "lucide-react";
-import { useCart, cartSubtotal, cartSavings } from "@/lib/cart-store";
+import { useCart } from "@/lib/cart-store";
+import { computeOrder } from "@/lib/commerce";
 import { useCurrency } from "@/lib/currency-store";
 import { useMounted } from "@/lib/use-mounted";
 import { ProductRender } from "@/components/ui/product-render";
@@ -44,15 +45,14 @@ const EMPTY: Fields = {
 
 export function CheckoutClient() {
   const mounted = useMounted();
-  const { items, clear } = useCart();
+  const { items, clear, couponCode } = useCart();
   const currency = useCurrency((s) => s.currency);
   const [fields, setFields] = useState<Fields>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof Fields, string>>>({});
   const [placed, setPlaced] = useState(false);
   const [orderId, setOrderId] = useState("");
 
-  const subtotal = cartSubtotal(items, currency);
-  const savings = cartSavings(items, currency);
+  const order = computeOrder(items, currency, couponCode);
 
   function set<K extends keyof Fields>(key: K, value: string) {
     setFields((f) => ({ ...f, [key]: value }));
@@ -234,21 +234,37 @@ export function CheckoutClient() {
             </ul>
 
             <div className="mt-5 space-y-2 border-t border-white/8 pt-5 text-sm">
-              {savings > 0 && (
-                <Row label="Discount" value={`− ${formatPrice(savings, currency)}`} accent />
+              <Row label="Subtotal" value={formatPrice(order.subtotal, currency)} />
+              {order.itemSavings > 0 && (
+                <Row
+                  label="Item savings"
+                  value={`− ${formatPrice(order.itemSavings, currency)}`}
+                  accent
+                />
               )}
-              <Row label="Subtotal" value={formatPrice(subtotal, currency)} />
-              <Row label="Shipping" value="Free" />
+              {order.couponDiscount > 0 && (
+                <Row
+                  label={`Coupon ${order.coupon?.code}`}
+                  value={`− ${formatPrice(order.couponDiscount, currency)}`}
+                  accent
+                />
+              )}
+              <Row
+                label="Shipping"
+                value={
+                  order.shipping === 0 ? "Free" : formatPrice(order.shipping, currency)
+                }
+              />
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-4">
               <span className="font-medium text-white">Total</span>
               <span className="font-display text-2xl font-bold text-white">
-                {formatPrice(subtotal, currency)}
+                {formatPrice(order.total, currency)}
               </span>
             </div>
 
             <Button type="submit" size="lg" className="mt-6 w-full">
-              <Lock className="h-4 w-4" /> Place order · {formatPrice(subtotal, currency)}
+              <Lock className="h-4 w-4" /> Place order · {formatPrice(order.total, currency)}
             </Button>
             <p className="mt-3 text-center text-xs text-white/40">
               By placing this demo order you agree to nothing at all.

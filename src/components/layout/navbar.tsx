@@ -9,6 +9,7 @@ import { Logo } from "./logo";
 import { SearchBar } from "./search-bar";
 import { CurrencyToggle } from "./currency-toggle";
 import { CartButton } from "./cart-button";
+import { WishlistButton } from "./wishlist-button";
 import { MobileMenu } from "./mobile-menu";
 
 export function Navbar() {
@@ -60,6 +61,7 @@ export function Navbar() {
           <div className="ml-auto flex items-center gap-2">
             <SearchBar className="hidden w-56 lg:block" />
             <CurrencyToggle className="hidden sm:flex" />
+            <WishlistButton />
             <CartButton />
           </div>
         </div>

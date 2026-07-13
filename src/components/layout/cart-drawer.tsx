@@ -1,26 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
-import {
-  useCart,
-  cartSubtotal,
-  cartSavings,
-  cartCount,
-} from "@/lib/cart-store";
+import { Minus, Plus, ShoppingBag, Trash2, X, Truck, Tag, Check } from "lucide-react";
+import { useCart, cartCount } from "@/lib/cart-store";
 import { useCurrency } from "@/lib/currency-store";
+import { computeOrder, findCoupon } from "@/lib/commerce";
 import { ProductRender } from "@/components/ui/product-render";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
 
 export function CartDrawer() {
-  const { items, isOpen, close, setQty, remove } = useCart();
+  const { items, isOpen, close, setQty, remove, couponCode, setCoupon } = useCart();
   const currency = useCurrency((s) => s.currency);
+  const [code, setCode] = useState("");
+  const [couponError, setCouponError] = useState("");
 
-  const subtotal = cartSubtotal(items, currency);
-  const savings = cartSavings(items, currency);
+  const order = computeOrder(items, currency, couponCode);
   const count = cartCount(items);
+  const shipPct = Math.min(
+    100,
+    Math.round(((order.threshold - order.freeShippingRemaining) / order.threshold) * 100)
+  );
+
+  function applyCoupon() {
+    const found = findCoupon(code);
+    if (!found) {
+      setCouponError("Invalid code");
+      return;
+    }
+    setCoupon(found.code);
+    setCode("");
+    setCouponError("");
+  }
 
   return (
     <AnimatePresence>
@@ -48,9 +61,7 @@ export function CartDrawer() {
                 <ShoppingBag className="h-5 w-5 text-brand" />
                 Your Cart
                 {count > 0 && (
-                  <span className="text-sm font-normal text-white/45">
-                    ({count})
-                  </span>
+                  <span className="text-sm font-normal text-white/45">({count})</span>
                 )}
               </h2>
               <button
@@ -62,7 +73,6 @@ export function CartDrawer() {
               </button>
             </div>
 
-            {/* Items */}
             {items.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/[0.04]">
@@ -86,10 +96,38 @@ export function CartDrawer() {
               </div>
             ) : (
               <>
+                {/* Free-shipping progress */}
+                <div className="border-b border-white/8 px-6 py-4">
+                  <p className="flex items-center gap-2 text-sm text-white/70">
+                    <Truck className="h-4 w-4 text-brand" />
+                    {order.freeShipping ? (
+                      <span className="text-emerald-400">
+                        You&apos;ve unlocked free shipping!
+                      </span>
+                    ) : (
+                      <span>
+                        Add{" "}
+                        <span className="font-semibold text-white">
+                          {formatPrice(order.freeShippingRemaining, currency)}
+                        </span>{" "}
+                        for free shipping
+                      </span>
+                    )}
+                  </p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <motion.div
+                      className="h-full rounded-full bg-brand-gradient"
+                      initial={false}
+                      animate={{ width: `${shipPct}%` }}
+                      transition={{ type: "spring", stiffness: 200, damping: 30 }}
+                    />
+                  </div>
+                </div>
+
+                {/* Items */}
                 <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
                   {items.map((item) => {
-                    const price =
-                      currency === "USD" ? item.priceUSD : item.priceINR;
+                    const price = currency === "USD" ? item.priceUSD : item.priceINR;
                     return (
                       <div
                         key={item.id}
@@ -154,42 +192,101 @@ export function CartDrawer() {
 
                 {/* Footer */}
                 <div className="space-y-4 border-t border-white/10 px-6 py-5">
-                  {savings > 0 && (
-                    <div className="flex items-center justify-between text-sm text-emerald-400">
-                      <span>You save</span>
-                      <span className="font-semibold">
-                        {formatPrice(savings, currency)}
+                  {/* Coupon */}
+                  {order.coupon ? (
+                    <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+                      <span className="flex items-center gap-2 text-sm text-emerald-300">
+                        <Check className="h-4 w-4" />
+                        {order.coupon.code} applied
                       </span>
+                      <button
+                        onClick={() => setCoupon(null)}
+                        className="text-xs text-white/50 hover:text-white cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                          <input
+                            value={code}
+                            onChange={(e) => {
+                              setCode(e.target.value);
+                              setCouponError("");
+                            }}
+                            onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+                            placeholder="Promo code (try DRIFT10)"
+                            aria-label="Promo code"
+                            className="h-10 w-full rounded-full border border-white/12 bg-white/[0.04] pl-9 pr-3 text-sm text-white placeholder:text-white/30 focus:border-brand/50 focus:outline-none"
+                          />
+                        </div>
+                        <Button variant="outline" size="sm" onClick={applyCoupon}>
+                          Apply
+                        </Button>
+                      </div>
+                      {couponError && (
+                        <p className="mt-1 pl-3 text-xs text-brand-300">{couponError}</p>
+                      )}
                     </div>
                   )}
-                  <div className="flex items-center justify-between">
-                    <span className="text-white/60">Subtotal</span>
+
+                  <div className="space-y-1.5 text-sm">
+                    {order.itemSavings > 0 && (
+                      <div className="flex items-center justify-between text-emerald-400">
+                        <span>Item savings</span>
+                        <span>− {formatPrice(order.itemSavings, currency)}</span>
+                      </div>
+                    )}
+                    {order.couponDiscount > 0 && (
+                      <div className="flex items-center justify-between text-emerald-400">
+                        <span>Coupon ({order.coupon?.value}%)</span>
+                        <span>− {formatPrice(order.couponDiscount, currency)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between text-white/60">
+                      <span>Shipping</span>
+                      <span>
+                        {order.shipping === 0
+                          ? "Free"
+                          : formatPrice(order.shipping, currency)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-white/8 pt-3">
+                    <span className="text-white/60">Total</span>
                     <span className="font-display text-2xl font-bold text-white">
-                      {formatPrice(subtotal, currency)}
+                      {formatPrice(order.total, currency)}
                     </span>
                   </div>
-                  <p className="text-xs text-white/40">
-                    Shipping & taxes calculated at checkout.
-                  </p>
-                  <Link
-                    href="/checkout"
-                    onClick={close}
-                    className={buttonVariants({
-                      variant: "primary",
-                      size: "lg",
-                      className: "w-full",
-                    })}
-                  >
-                    Checkout
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={close}
-                    className="w-full"
-                  >
-                    Continue shopping
-                  </Button>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link
+                      href="/cart"
+                      onClick={close}
+                      className={buttonVariants({
+                        variant: "outline",
+                        size: "lg",
+                        className: "w-full",
+                      })}
+                    >
+                      View cart
+                    </Link>
+                    <Link
+                      href="/checkout"
+                      onClick={close}
+                      className={buttonVariants({
+                        variant: "primary",
+                        size: "lg",
+                        className: "w-full",
+                      })}
+                    >
+                      Checkout
+                    </Link>
+                  </div>
                 </div>
               </>
             )}
