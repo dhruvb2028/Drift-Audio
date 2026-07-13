@@ -100,9 +100,15 @@ export async function recordOrderFromSession(sessionId: string) {
 /** All orders for a signed-in user, newest first. Empty when no DB configured. */
 export async function getOrdersForUser(userId: string) {
   if (!prisma || !userId) return [];
-  return prisma.order.findMany({
-    where: { userId },
-    include: { items: true },
-    orderBy: { createdAt: "desc" },
-  });
+  try {
+    return await prisma.order.findMany({
+      where: { userId },
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch {
+    // DB unreachable or tables not migrated yet — render the page without
+    // orders rather than erroring.
+    return [];
+  }
 }
