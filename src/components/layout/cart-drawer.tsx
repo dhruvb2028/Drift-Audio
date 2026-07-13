@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Minus, Plus, ShoppingBag, Trash2, X, Truck, Tag, Check } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, X, Truck, Tag, Check, Loader2, Lock } from "lucide-react";
 import { useCart, cartCount } from "@/lib/cart-store";
 import { useCurrency } from "@/lib/currency-store";
+import { useStripeCheckout } from "@/lib/use-stripe-checkout";
 import { computeOrder, findCoupon } from "@/lib/commerce";
 import { ProductRender } from "@/components/ui/product-render";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { formatPrice } from "@/lib/utils";
 export function CartDrawer() {
   const { items, isOpen, close, setQty, remove, couponCode, setCoupon } = useCart();
   const currency = useCurrency((s) => s.currency);
+  const { start, loading: checkoutLoading } = useStripeCheckout();
   const [code, setCode] = useState("");
   const [couponError, setCouponError] = useState("");
 
@@ -275,17 +277,20 @@ export function CartDrawer() {
                     >
                       View cart
                     </Link>
-                    <Link
-                      href="/checkout"
-                      onClick={close}
-                      className={buttonVariants({
-                        variant: "primary",
-                        size: "lg",
-                        className: "w-full",
-                      })}
+                    <Button
+                      onClick={start}
+                      disabled={checkoutLoading}
+                      size="lg"
+                      className="w-full"
                     >
-                      Checkout
-                    </Link>
+                      {checkoutLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Lock className="h-4 w-4" /> Checkout
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </>

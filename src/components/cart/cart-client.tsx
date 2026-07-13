@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -16,10 +16,13 @@ import {
   Lock,
   BadgeCheck,
   ArrowRight,
+  Loader2,
+  Info,
 } from "lucide-react";
 import { useCart, cartCount } from "@/lib/cart-store";
 import { useCurrency } from "@/lib/currency-store";
 import { useMounted } from "@/lib/use-mounted";
+import { useStripeCheckout } from "@/lib/use-stripe-checkout";
 import { computeOrder, findCoupon, COUPONS } from "@/lib/commerce";
 import { ProductRender } from "@/components/ui/product-render";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -31,8 +34,16 @@ export function CartClient() {
   const mounted = useMounted();
   const { items, setQty, remove, couponCode, setCoupon } = useCart();
   const currency = useCurrency((s) => s.currency);
+  const { start, loading, error: checkoutError } = useStripeCheckout();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [canceled, setCanceled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCanceled(new URLSearchParams(window.location.search).has("canceled"));
+    }
+  }, []);
 
   const order = computeOrder(items, currency, couponCode);
   const shipPct = Math.min(
@@ -100,6 +111,13 @@ export function CartClient() {
           Continue shopping <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
+
+      {canceled && (
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+          <Info className="h-4 w-4 shrink-0" />
+          Payment was canceled — your cart is safe. You can check out again below.
+        </div>
+      )}
 
       <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
         {/* Items */}
@@ -327,17 +345,32 @@ export function CartClient() {
                 </span>
               </div>
 
-              <Link
-                href="/checkout"
-                className={buttonVariants({ size: "lg", className: "mt-6 w-full" })}
-              >
-                <Lock className="h-4 w-4" /> Secure checkout
-              </Link>
+              <Button onClick={start} disabled={loading} size="lg" className="mt-6 w-full">
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Redirecting to Stripe…
+                  </>
+                ) : (
+                  <>
+                    <Lock className="h-4 w-4" /> Secure checkout ·{" "}
+                    {formatPrice(order.total, currency)}
+                  </>
+                )}
+              </Button>
+              {checkoutError && (
+                <p className="mt-3 rounded-lg bg-brand/10 px-3 py-2 text-sm text-brand-300">
+                  {checkoutError}
+                </p>
+              )}
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-white/40">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                You&apos;ll pay on Stripe&apos;s secure page — card details never touch our site.
+              </p>
             </div>
 
             {/* Trust footer */}
             <div className="flex items-center justify-between border-t border-white/10 bg-white/[0.02] px-6 py-4">
-              <span className="text-xs text-white/40">We accept</span>
+              <span className="text-xs text-white/40">Powered by Stripe · we accept</span>
               <PaymentMarks />
             </div>
           </div>

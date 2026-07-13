@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       },
       phone_number_collection: { enabled: true },
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/checkout?canceled=1`,
+      cancel_url: `${origin}/cart?canceled=1`,
       metadata: { project: "drift-audio-demo", couponCode: couponCode ?? "" },
     });
 
