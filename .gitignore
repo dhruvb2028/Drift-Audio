@@ -38,3 +38,4 @@ __pycache__/
 /design-system/
 
 /src/generated/prisma
+.prisma/
