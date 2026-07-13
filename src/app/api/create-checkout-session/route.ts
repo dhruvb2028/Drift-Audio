@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { auth } from "@clerk/nextjs/server";
 import { getStripeServer } from "@/lib/stripe";
 import { computeOrderFromLines, findCoupon } from "@/lib/commerce";
 import { PRODUCTS } from "@/lib/products";
@@ -7,6 +8,9 @@ import type { Currency } from "@/lib/utils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// Checkout requires a signed-in user whenever Clerk is configured.
+const authRequired = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 interface Line {
   slug: string;
@@ -16,6 +20,17 @@ interface Line {
 
 export async function POST(req: Request) {
   try {
+    // Gate checkout behind authentication (server-side, so it can't be bypassed).
+    if (authRequired) {
+      const { userId } = await auth();
+      if (!userId) {
+        return NextResponse.json(
+          { error: "Please sign in to check out.", code: "auth_required" },
+          { status: 401 }
+        );
+      }
+    }
+
     const stripe = getStripeServer();
     const body = await req.json();
     const items: Line[] = Array.isArray(body?.items) ? body.items : [];
