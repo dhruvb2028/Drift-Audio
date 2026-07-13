@@ -70,6 +70,8 @@ export default function RootLayout({
   if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
     return (
       <ClerkProvider
+        signInUrl="/sign-in"
+        signUpUrl="/sign-up"
         appearance={{
           theme: dark,
           variables: {

@@ -15,11 +15,18 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default hasClerk
-  ? clerkMiddleware(async (auth, req) => {
-      if (isProtectedRoute(req)) {
-        await auth.protect();
-      }
-    })
+  ? clerkMiddleware(
+      async (auth, req) => {
+        if (isProtectedRoute(req)) {
+          // Redirect signed-out visitors to our own branded /sign-in page
+          // (with a return path), instead of Clerk's hosted portal.
+          await auth.protect({
+            unauthenticatedUrl: new URL("/sign-in", req.url).toString(),
+          });
+        }
+      },
+      { signInUrl: "/sign-in", signUpUrl: "/sign-up" }
+    )
   : function middleware() {
       return NextResponse.next();
     };
