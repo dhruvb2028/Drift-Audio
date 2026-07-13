@@ -1,12 +1,13 @@
 import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 /** True once a database is configured. Order features no-op until then. */
 export const hasDatabase = !!process.env.DATABASE_URL;
 
 function makeClient() {
-  // Prisma Postgres connects over its Accelerate URL (prisma+postgres://…),
-  // which handles connection pooling for serverless out of the box.
-  return new PrismaClient({ accelerateUrl: process.env.DATABASE_URL as string });
+  // node-postgres driver adapter over the direct Prisma Postgres connection.
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  return new PrismaClient({ adapter });
 }
 
 type AppPrismaClient = ReturnType<typeof makeClient>;
