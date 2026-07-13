@@ -1,5 +1,6 @@
 import type { CartItem } from "./cart-store";
 import type { Currency } from "./utils";
+import { PRODUCTS } from "./products";
 
 /** Free-shipping threshold + flat fee, per currency. */
 export const FREE_SHIPPING_THRESHOLD: Record<Currency, number> = {
@@ -50,6 +51,32 @@ export interface OrderTotals {
   freeShippingRemaining: number;
   threshold: number;
   total: number;
+}
+
+/**
+ * Server-safe order total from raw line items ({slug, qty}) — looks up trusted
+ * prices from PRODUCTS so the client can never dictate the amount charged.
+ */
+export function computeOrderFromLines(
+  lines: { slug: string; qty: number }[],
+  currency: Currency,
+  couponCode?: string | null
+): OrderTotals {
+  const items = lines
+    .map((l) => {
+      const p = PRODUCTS.find((x) => x.slug === l.slug);
+      if (!p) return null;
+      const qty = Math.max(1, Math.min(99, Math.floor(Number(l.qty) || 1)));
+      return {
+        priceINR: p.priceINR,
+        priceUSD: p.priceUSD,
+        mrpINR: p.mrpINR,
+        mrpUSD: p.mrpUSD,
+        qty,
+      } as CartItem;
+    })
+    .filter(Boolean) as CartItem[];
+  return computeOrder(items, currency, couponCode);
 }
 
 /** Single source of truth for cart/checkout math. */

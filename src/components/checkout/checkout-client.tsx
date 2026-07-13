@@ -1,17 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CheckCircle2, Lock, ShoppingBag, Info } from "lucide-react";
+import { CheckCircle2, Lock, ShoppingBag, Info, Loader2 } from "lucide-react";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 import { useCart } from "@/lib/cart-store";
 import { computeOrder } from "@/lib/commerce";
 import { useCurrency } from "@/lib/currency-store";
 import { useMounted } from "@/lib/use-mounted";
+import { getStripe, hasStripeKey } from "@/lib/stripe-client";
 import { ProductRender } from "@/components/ui/product-render";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+
+const stripePromise = getStripe();
 
 type Fields = {
   email: string;
@@ -22,10 +31,6 @@ type Fields = {
   state: string;
   zip: string;
   phone: string;
-  cardName: string;
-  cardNumber: string;
-  expiry: string;
-  cvc: string;
 };
 
 const EMPTY: Fields = {
@@ -37,10 +42,6 @@ const EMPTY: Fields = {
   state: "",
   zip: "",
   phone: "",
-  cardName: "",
-  cardNumber: "",
-  expiry: "",
-  cvc: "",
 };
 
 export function CheckoutClient() {
@@ -52,17 +53,59 @@ export function CheckoutClient() {
   const [placed, setPlaced] = useState(false);
   const [orderId, setOrderId] = useState("");
 
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [initError, setInitError] = useState<string>("");
+  const [initLoading, setInitLoading] = useState(false);
+
   const order = computeOrder(items, currency, couponCode);
+  const itemsKey = items.map((i) => `${i.slug}:${i.qty}`).join(",");
+  const stripeConfigured = hasStripeKey();
+
+  // Create / refresh the PaymentIntent whenever the order changes.
+  useEffect(() => {
+    if (!mounted || placed || items.length === 0 || !stripeConfigured) return;
+    let cancelled = false;
+    setInitLoading(true);
+    setInitError("");
+    setClientSecret(null);
+    fetch("/api/create-payment-intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: items.map((i) => ({ slug: i.slug, qty: i.qty })),
+        currency,
+        couponCode,
+      }),
+    })
+      .then(async (r) => {
+        const data = await r.json();
+        if (cancelled) return;
+        if (!r.ok) {
+          setInitError(data.error || "Could not start the payment.");
+          return;
+        }
+        setClientSecret(data.clientSecret);
+      })
+      .catch(() => {
+        if (!cancelled) setInitError("Could not reach the payment server.");
+      })
+      .finally(() => {
+        if (!cancelled) setInitLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, itemsKey, currency, couponCode, stripeConfigured, placed]);
 
   function set<K extends keyof Fields>(key: K, value: string) {
     setFields((f) => ({ ...f, [key]: value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
   }
 
-  function validate(): boolean {
+  function validateShipping(): boolean {
     const e: Partial<Record<keyof Fields, string>> = {};
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email))
-      e.email = "Enter a valid email";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) e.email = "Enter a valid email";
     if (!fields.firstName.trim()) e.firstName = "Required";
     if (!fields.lastName.trim()) e.lastName = "Required";
     if (!fields.address.trim()) e.address = "Required";
@@ -70,34 +113,44 @@ export function CheckoutClient() {
     if (!fields.state.trim()) e.state = "Required";
     if (!/^\d{5,6}$/.test(fields.zip)) e.zip = "Invalid PIN/ZIP";
     if (!/^[\d\s+-]{7,}$/.test(fields.phone)) e.phone = "Invalid phone";
-    if (!fields.cardName.trim()) e.cardName = "Required";
-    if (fields.cardNumber.replace(/\s/g, "").length < 15)
-      e.cardNumber = "Invalid card number";
-    if (!/^\d{2}\s?\/\s?\d{2}$/.test(fields.expiry)) e.expiry = "MM / YY";
-    if (!/^\d{3,4}$/.test(fields.cvc)) e.cvc = "CVC";
     setErrors(e);
-    return Object.keys(e).length === 0;
-  }
-
-  function placeOrder(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) {
+    if (Object.keys(e).length) {
       document
         .querySelector("[data-error='true']")
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
+      return false;
     }
-    setOrderId("DA" + Date.now().toString().slice(-8));
+    return true;
+  }
+
+  function handleSuccess(paymentIntentId: string) {
+    setOrderId(paymentIntentId);
     setPlaced(true);
     clear();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  const appearance = useMemo(
+    () =>
+      ({
+        theme: "night" as const,
+        variables: {
+          colorPrimary: "#EE1C25",
+          colorBackground: "#121212",
+          colorText: "#f5f5f5",
+          colorDanger: "#ff6b6b",
+          borderRadius: "10px",
+          fontFamily: "DM Sans, system-ui, sans-serif",
+        },
+      }),
+    []
+  );
+
   if (!mounted) {
     return <div className="container py-20 text-white/50">Loading…</div>;
   }
 
-  // Success state
+  // Success
   if (placed) {
     return (
       <div className="container flex flex-col items-center py-24 text-center">
@@ -110,12 +163,12 @@ export function CheckoutClient() {
           <CheckCircle2 className="h-11 w-11 text-emerald-400" />
         </motion.div>
         <h1 className="mt-6 font-display text-4xl font-bold text-white">
-          Order confirmed
+          Payment successful
         </h1>
         <p className="mt-3 max-w-md text-white/60">
-          Thanks for the (demo) order! Your confirmation number is{" "}
-          <span className="font-semibold text-white">{orderId}</span>. In a real
-          store, a receipt would now be on its way to your inbox.
+          Thanks for your order! Your Stripe payment reference is{" "}
+          <span className="break-all font-mono text-sm text-white">{orderId}</span>.
+          A receipt would be emailed in a live store.
         </p>
         <Link
           href="/products"
@@ -154,15 +207,18 @@ export function CheckoutClient() {
     <div className="container py-10">
       <h1 className="font-display text-4xl font-bold text-white">Checkout</h1>
 
-      {/* Demo banner */}
-      <div className="mt-5 flex items-center gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
-        <Info className="h-4 w-4 shrink-0" />
-        Demo checkout — this is a portfolio concept. No real payment is
-        processed and no card data is stored.
+      {/* Test-mode banner */}
+      <div className="mt-5 flex items-start gap-3 rounded-2xl border border-sky-400/25 bg-sky-400/10 px-4 py-3 text-sm text-sky-200">
+        <Info className="mt-0.5 h-4 w-4 shrink-0" />
+        <span>
+          <strong>Stripe test mode.</strong> Pay with card{" "}
+          <span className="font-mono">4242 4242 4242 4242</span>, any future expiry,
+          any CVC & ZIP. It&apos;s a real Stripe payment flow — no money moves.
+        </span>
       </div>
 
-      <form onSubmit={placeOrder} className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]" noValidate>
-        {/* Left: form */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
+        {/* Left: shipping */}
         <div className="space-y-8">
           <Fieldset title="Contact">
             <Field
@@ -186,19 +242,31 @@ export function CheckoutClient() {
             <Field label="Phone" value={fields.phone} onChange={(v) => set("phone", v)} error={errors.phone} inputMode="tel" />
           </Fieldset>
 
+          {/* Payment */}
           <Fieldset title="Payment" icon={<Lock className="h-4 w-4 text-white/40" />}>
-            <Field label="Name on card" value={fields.cardName} onChange={(v) => set("cardName", v)} error={errors.cardName} className="sm:col-span-2" />
-            <Field
-              label="Card number"
-              value={fields.cardNumber}
-              onChange={(v) => set("cardNumber", formatCard(v))}
-              error={errors.cardNumber}
-              className="sm:col-span-2"
-              inputMode="numeric"
-              placeholder="4242 4242 4242 4242"
-            />
-            <Field label="Expiry" value={fields.expiry} onChange={(v) => set("expiry", formatExpiry(v))} error={errors.expiry} placeholder="MM / YY" inputMode="numeric" />
-            <Field label="CVC" value={fields.cvc} onChange={(v) => set("cvc", v.replace(/\D/g, "").slice(0, 4))} error={errors.cvc} placeholder="123" inputMode="numeric" />
+            <div className="sm:col-span-2">
+              {!stripeConfigured || initError ? (
+                <SetupNotice message={initError} />
+              ) : !clientSecret ? (
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-sm text-white/50">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {initLoading ? "Setting up secure payment…" : "Preparing payment…"}
+                </div>
+              ) : (
+                <Elements
+                  stripe={stripePromise}
+                  options={{ clientSecret, appearance }}
+                  key={clientSecret}
+                >
+                  <PaymentSection
+                    email={fields.email}
+                    validateShipping={validateShipping}
+                    totalLabel={formatPrice(order.total, currency)}
+                    onSuccess={handleSuccess}
+                  />
+                </Elements>
+              )}
+            </div>
           </Fieldset>
         </div>
 
@@ -220,9 +288,7 @@ export function CheckoutClient() {
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-white">
-                        {item.name}
-                      </p>
+                      <p className="truncate text-sm font-medium text-white">{item.name}</p>
                       <p className="text-xs text-white/45">{item.colorName}</p>
                     </div>
                     <span className="text-sm font-medium text-white">
@@ -236,25 +302,12 @@ export function CheckoutClient() {
             <div className="mt-5 space-y-2 border-t border-white/8 pt-5 text-sm">
               <Row label="Subtotal" value={formatPrice(order.subtotal, currency)} />
               {order.itemSavings > 0 && (
-                <Row
-                  label="Item savings"
-                  value={`− ${formatPrice(order.itemSavings, currency)}`}
-                  accent
-                />
+                <Row label="Item savings" value={`− ${formatPrice(order.itemSavings, currency)}`} accent />
               )}
               {order.couponDiscount > 0 && (
-                <Row
-                  label={`Coupon ${order.coupon?.code}`}
-                  value={`− ${formatPrice(order.couponDiscount, currency)}`}
-                  accent
-                />
+                <Row label={`Coupon ${order.coupon?.code}`} value={`− ${formatPrice(order.couponDiscount, currency)}`} accent />
               )}
-              <Row
-                label="Shipping"
-                value={
-                  order.shipping === 0 ? "Free" : formatPrice(order.shipping, currency)
-                }
-              />
+              <Row label="Shipping" value={order.shipping === 0 ? "Free" : formatPrice(order.shipping, currency)} />
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-4">
               <span className="font-medium text-white">Total</span>
@@ -262,16 +315,92 @@ export function CheckoutClient() {
                 {formatPrice(order.total, currency)}
               </span>
             </div>
-
-            <Button type="submit" size="lg" className="mt-6 w-full">
-              <Lock className="h-4 w-4" /> Place order · {formatPrice(order.total, currency)}
-            </Button>
-            <p className="mt-3 text-center text-xs text-white/40">
-              By placing this demo order you agree to nothing at all.
+            <p className="mt-4 text-center text-xs text-white/40">
+              Secured by Stripe · your card details never touch our servers.
             </p>
           </div>
         </aside>
-      </form>
+      </div>
+    </div>
+  );
+}
+
+function PaymentSection({
+  email,
+  validateShipping,
+  totalLabel,
+  onSuccess,
+}: {
+  email: string;
+  validateShipping: () => boolean;
+  totalLabel: string;
+  onSuccess: (id: string) => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+  const [payError, setPayError] = useState("");
+
+  async function pay(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validateShipping()) return;
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+    setPayError("");
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+      confirmParams: email ? { receipt_email: email } : undefined,
+    });
+
+    if (error) {
+      setPayError(error.message || "Payment failed. Please try again.");
+      setProcessing(false);
+      return;
+    }
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      onSuccess(paymentIntent.id);
+      return;
+    }
+    setPayError("Payment could not be completed.");
+    setProcessing(false);
+  }
+
+  return (
+    <form onSubmit={pay} className="space-y-4">
+      <PaymentElement options={{ layout: "tabs" }} />
+      {payError && <p className="text-sm text-brand-300">{payError}</p>}
+      <Button type="submit" size="lg" disabled={!stripe || processing} className="w-full">
+        {processing ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" /> Processing…
+          </>
+        ) : (
+          <>
+            <Lock className="h-4 w-4" /> Pay {totalLabel}
+          </>
+        )}
+      </Button>
+    </form>
+  );
+}
+
+function SetupNotice({ message }: { message?: string }) {
+  return (
+    <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-4 text-sm text-amber-200">
+      <p className="font-medium">
+        {message || "Stripe isn't configured yet."}
+      </p>
+      <p className="mt-2 text-amber-200/80">
+        Add your test keys to <span className="font-mono">.env.local</span> and
+        restart the dev server:
+      </p>
+      <pre className="mt-2 overflow-x-auto rounded-lg bg-black/40 p-3 text-xs text-amber-100">
+{`STRIPE_SECRET_KEY=sk_test_…
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_…`}
+      </pre>
     </div>
   );
 }
@@ -331,9 +460,7 @@ function Field({
         aria-invalid={!!error}
         className={cn(
           "h-11 w-full rounded-xl border bg-white/[0.04] px-4 text-white placeholder:text-white/30 focus:outline-none",
-          error
-            ? "border-brand/60 focus:border-brand"
-            : "border-white/12 focus:border-brand/50"
+          error ? "border-brand/60 focus:border-brand" : "border-white/12 focus:border-brand/50"
         )}
       />
       {error && <p className="mt-1 text-xs text-brand-300">{error}</p>}
@@ -358,18 +485,4 @@ function Row({
       </span>
     </div>
   );
-}
-
-function formatCard(v: string): string {
-  return v
-    .replace(/\D/g, "")
-    .slice(0, 16)
-    .replace(/(.{4})/g, "$1 ")
-    .trim();
-}
-
-function formatExpiry(v: string): string {
-  const digits = v.replace(/\D/g, "").slice(0, 4);
-  if (digits.length <= 2) return digits;
-  return `${digits.slice(0, 2)} / ${digits.slice(2)}`;
 }
