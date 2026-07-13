@@ -20,18 +20,17 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import type { Stripe } from "@stripe/stripe-js";
 import { useCart } from "@/lib/cart-store";
 import { computeOrder } from "@/lib/commerce";
 import { useCurrency } from "@/lib/currency-store";
 import { useMounted } from "@/lib/use-mounted";
-import { getStripe, hasStripeKey } from "@/lib/stripe-client";
+import { getStripe, hasStripeKey, resetStripe } from "@/lib/stripe-client";
 import { ProductRender } from "@/components/ui/product-render";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { PaymentMarks } from "@/components/checkout/payment-marks";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-
-const stripePromise = getStripe();
 
 type Fields = {
   email: string;
@@ -68,6 +67,10 @@ export function CheckoutClient() {
   const [initError, setInitError] = useState<string>("");
   const [initLoading, setInitLoading] = useState(false);
 
+  // Stripe.js instance: undefined = loading, null = failed to load, Stripe = ready.
+  const [stripe, setStripe] = useState<Stripe | null | undefined>(undefined);
+  const [stripeReloadKey, setStripeReloadKey] = useState(0);
+
   const order = computeOrder(items, currency, couponCode);
   const itemsKey = items.map((i) => `${i.slug}:${i.qty}`).join(",");
   const stripeConfigured = hasStripeKey();
@@ -83,6 +86,25 @@ export function CheckoutClient() {
     to.setDate(now.getDate() + 5);
     return `${fmt(from)} – ${fmt(to)}`;
   }, []);
+
+  // Load Stripe.js (retryable if the CDN is blocked / offline).
+  useEffect(() => {
+    if (!stripeConfigured) return;
+    let cancelled = false;
+    setStripe(undefined);
+    getStripe().then((s) => {
+      if (!cancelled) setStripe(s);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [stripeConfigured, stripeReloadKey]);
+
+  function retryStripe() {
+    resetStripe();
+    setStripe(undefined);
+    setStripeReloadKey((k) => k + 1);
+  }
 
   useEffect(() => {
     if (!mounted || placed || items.length === 0 || !stripeConfigured) return;
@@ -302,13 +324,15 @@ export function CheckoutClient() {
 
             {!stripeConfigured || initError ? (
               <SetupNotice message={initError} />
-            ) : !clientSecret ? (
+            ) : stripe === null ? (
+              <StripeLoadError onRetry={retryStripe} />
+            ) : !clientSecret || stripe === undefined ? (
               <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-8 text-sm text-white/50">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {initLoading ? "Setting up secure payment…" : "Preparing payment…"}
               </div>
             ) : (
-              <Elements stripe={stripePromise} options={{ clientSecret, appearance }} key={clientSecret}>
+              <Elements stripe={stripe} options={{ clientSecret, appearance }} key={clientSecret}>
                 <PaymentSection
                   email={fields.email}
                   validateShipping={validateShipping}
@@ -534,6 +558,25 @@ function StepCard({
       </div>
       {children}
     </motion.section>
+  );
+}
+
+function StripeLoadError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="rounded-xl border border-brand/25 bg-brand/[0.06] p-5 text-sm">
+      <p className="font-medium text-white">
+        Couldn&apos;t load the secure payment form
+      </p>
+      <p className="mt-2 leading-relaxed text-white/60">
+        Stripe.js couldn&apos;t be reached. This is usually an ad-blocker or
+        privacy extension blocking{" "}
+        <span className="font-mono">js.stripe.com</span>, or a dropped
+        connection. Allow it for this site, then retry.
+      </p>
+      <Button variant="outline" size="md" onClick={onRetry} className="mt-4">
+        <RefreshCw className="h-4 w-4" /> Retry
+      </Button>
+    </div>
   );
 }
 
