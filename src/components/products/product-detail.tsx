@@ -20,6 +20,7 @@ import { useCart } from "@/lib/cart-store";
 import { useToast } from "@/lib/toast-store";
 import { useWishlist } from "@/lib/wishlist-store";
 import { useRecentlyViewed } from "@/lib/recently-viewed-store";
+import { useMounted } from "@/lib/use-mounted";
 import { isLowStock, getStock } from "@/lib/commerce";
 import { ProductRender } from "@/components/ui/product-render";
 import { PriceTag } from "@/components/ui/price-tag";
@@ -43,11 +44,14 @@ export function ProductDetail({
   const add = useCart((s) => s.add);
   const open = useCart((s) => s.open);
   const pushToast = useToast((s) => s.push);
-  const wished = useWishlist((s) => s.slugs.includes(product.slug));
+  const mounted = useMounted();
+  const wishedRaw = useWishlist((s) => s.slugs.includes(product.slug));
   const toggleWish = useWishlist((s) => s.toggle);
   const trackView = useRecentlyViewed((s) => s.add);
   const category = CATEGORIES.find((c) => c.id === product.category);
   const lowStock = isLowStock(product.slug);
+  // Persisted store rehydrates on the client; keep first client render === server.
+  const wished = mounted && wishedRaw;
 
   useEffect(() => {
     trackView(product.slug);

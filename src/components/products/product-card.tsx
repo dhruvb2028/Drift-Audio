@@ -10,6 +10,7 @@ import { useWishlist } from "@/lib/wishlist-store";
 import { useCompare } from "@/lib/compare-store";
 import { useQuickView } from "@/lib/quickview-store";
 import { useToast } from "@/lib/toast-store";
+import { useMounted } from "@/lib/use-mounted";
 import { isLowStock, getStock } from "@/lib/commerce";
 import { ProductRender } from "@/components/ui/product-render";
 import { PriceTag } from "@/components/ui/price-tag";
@@ -24,14 +25,18 @@ export function ProductCard({
   product: Product;
   className?: string;
 }) {
+  const mounted = useMounted();
   const add = useCart((s) => s.add);
   const openCart = useCart((s) => s.open);
   const pushToast = useToast((s) => s.push);
-  const wished = useWishlist((s) => s.slugs.includes(product.slug));
+  const wishedRaw = useWishlist((s) => s.slugs.includes(product.slug));
   const toggleWish = useWishlist((s) => s.toggle);
-  const compared = useCompare((s) => s.slugs.includes(product.slug));
+  const comparedRaw = useCompare((s) => s.slugs.includes(product.slug));
   const toggleCompare = useCompare((s) => s.toggle);
   const openQuickView = useQuickView((s) => s.open);
+  // Persisted stores rehydrate on the client; keep first client render === server.
+  const wished = mounted && wishedRaw;
+  const compared = mounted && comparedRaw;
 
   const category = CATEGORIES.find((c) => c.id === product.category);
   const topBadge = product.badges[0];
