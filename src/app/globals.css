@@ -107,6 +107,16 @@
     background-clip: text;
     color: transparent;
   }
+
+  /* Continuously flowing gradient text — energetic accent */
+  .text-flow {
+    background: linear-gradient(90deg, #ff8a8a, #ff2e2e, #ee1c25, #ff2e2e, #ff8a8a);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-pan 4s linear infinite;
+  }
 }
 
 @layer utilities {
