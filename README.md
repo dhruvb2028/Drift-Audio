@@ -9,12 +9,18 @@ A production-grade, fully interactive e-commerce experience for a fictional prem
 ## ✨ Highlights
 
 - **Fully animated landing page** — parallax hero, scroll-reveal sections, infinite marquee, interactive colour configurator, testimonials.
-- **Real shopping cart** — add / remove / change quantity, live subtotal & savings, slide-in drawer, **persists across page reloads** (localStorage).
-- **Dual-currency** — toggle ₹ INR ↔ $ USD; every price updates instantly everywhere and the preference persists.
+- **Real shopping cart** — add / remove / change quantity, live subtotal & savings, slide-in drawer **and** a dedicated `/cart` page, **persists across page reloads** (localStorage).
+- **Wishlist** — save any product (heart), navbar badge, dedicated `/wishlist` page, persisted.
+- **Quick-view modal** — preview + add to cart from the catalog without leaving the page (ESC / focus handling).
+- **Product comparison** — select up to 3 products, floating compare bar, side-by-side `/compare` spec table.
+- **Cart conversion tools** — free-shipping progress bar, working promo codes (`DRIFT10` / `SOUND20` / `WELCOME15`), stock-urgency badges, recently-viewed.
+- **Toast notifications** — slick add-to-cart feedback with a "View" action.
+- **Dual-currency** — toggle ₹ INR ↔ $ USD; every price updates instantly everywhere and persists.
 - **Live search** — as-you-type product filtering with a results dropdown from any page.
 - **Product catalog** — category filters, price buckets, and 5 sort modes.
 - **Dynamic product pages** — colour picker with live re-render, quantity, add-to-cart / buy-now, specs, verified reviews, related products (statically generated per product).
-- **Checkout flow** — validated shipping + payment form with a live order summary and an order-confirmation state (demo only — no real payment).
+- **Checkout flow** — validated shipping + payment form with a live order summary (coupons + shipping) and an order-confirmation state (demo only — no real payment).
+- **More pages** — `/about` (brand story + timeline), `/contact` (validated form + FAQ accordion), `/track` (animated order-status timeline).
 - **Premium polish** — designed 404 & empty states, keyboard focus states, `prefers-reduced-motion` support, custom SVG product illustrations, glassmorphic UI, grain texture.
 - **Responsive** — mobile → 4K, animated mobile menu, zero horizontal overflow.
 
