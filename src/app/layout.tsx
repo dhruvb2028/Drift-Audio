@@ -7,7 +7,6 @@ import { CartDrawer } from "@/components/layout/cart-drawer";
 import { Toaster } from "@/components/ui/toaster";
 import { QuickView } from "@/components/products/quick-view";
 import { CompareBar } from "@/components/products/compare-bar";
-import { ScrollProgress } from "@/components/ui/scroll-progress";
 import { BackToTop } from "@/components/ui/back-to-top";
 
 const display = Space_Grotesk({
@@ -53,7 +52,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${display.variable} ${body.variable}`}>
       <body className="noise min-h-screen bg-background text-foreground">
-        <ScrollProgress />
         <Navbar />
         <main className="pt-20">{children}</main>
         <Footer />
