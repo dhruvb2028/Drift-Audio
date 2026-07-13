@@ -41,8 +41,23 @@ export function ColorConfigurator() {
         />
         <div className="relative grid items-center gap-8 p-6 md:grid-cols-2 md:p-12">
           {/* Live render */}
-          <div className="flex items-center justify-center">
-            <div className="w-full max-w-sm">
+          <div className="relative flex aspect-square items-center justify-center">
+            {/* Spinning halo */}
+            <div
+              className="absolute h-[78%] w-[78%] animate-spin-slow rounded-full opacity-45 blur-2xl transition-colors duration-500"
+              style={{
+                background: `conic-gradient(from 0deg, transparent, ${color.hex}, transparent 55%, ${color.hex}88, transparent)`,
+              }}
+            />
+            {/* Expanding rings */}
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="absolute aspect-square w-[52%] animate-ring rounded-full border-2"
+                style={{ borderColor: `${color.hex}55`, animationDelay: `${i * 1.1}s` }}
+              />
+            ))}
+            <div className="relative w-full max-w-sm animate-float">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={color.hex}

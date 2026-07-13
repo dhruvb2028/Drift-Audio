@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
-import { ProductRender } from "@/components/ui/product-render";
+import { AnimatedProductVisual } from "@/components/home/animated-product-visual";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { RenderKind } from "@/lib/types";
@@ -63,24 +63,13 @@ function ShowcaseBlock({ block }: { block: Block }) {
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className={cn(
-          "relative flex items-center justify-center",
-          block.reverse && "md:order-2"
-        )}
+        className={cn("mx-auto w-full max-w-md", block.reverse && "md:order-2")}
       >
-        <div
-          className="absolute h-64 w-64 animate-pulse-glow rounded-full blur-[90px]"
-          style={{ background: `${block.color}40` }}
+        <AnimatedProductVisual
+          kind={block.render}
+          color={block.color}
+          reverse={block.reverse}
         />
-        <div
-          className="absolute h-72 w-72 animate-spin-slow rounded-full opacity-40 blur-2xl"
-          style={{
-            background: `conic-gradient(from 0deg, transparent, ${block.color}, transparent 55%, ${block.color}88, transparent)`,
-          }}
-        />
-        <div className="relative w-full max-w-sm animate-float">
-          <ProductRender kind={block.render} color={block.color} />
-        </div>
       </motion.div>
 
       {/* Copy */}
