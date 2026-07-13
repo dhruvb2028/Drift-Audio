@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import { Plus, Eye, Heart, GitCompareArrows } from "lucide-react";
 import type { Product } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
@@ -42,6 +42,21 @@ export function ProductCard({
   const topBadge = product.badges[0];
   const lowStock = isLowStock(product.slug);
 
+  // Cursor-tracking 3D tilt for the visual.
+  const rx = useMotionValue(0);
+  const ry = useMotionValue(0);
+  const srx = useSpring(rx, { stiffness: 150, damping: 15 });
+  const sry = useSpring(ry, { stiffness: 150, damping: 15 });
+  function onTilt(e: React.MouseEvent<HTMLDivElement>) {
+    const r = e.currentTarget.getBoundingClientRect();
+    ry.set(((e.clientX - r.left) / r.width - 0.5) * 12);
+    rx.set(-((e.clientY - r.top) / r.height - 0.5) * 12);
+  }
+  function resetTilt() {
+    rx.set(0);
+    ry.set(0);
+  }
+
   function quickAdd(e: React.MouseEvent) {
     e.preventDefault();
     add(product, product.colors[0]);
@@ -71,7 +86,11 @@ export function ProductCard({
         className="block overflow-hidden rounded-3xl border border-white/10 bg-card shadow-card transition-colors duration-300 hover:border-white/20"
       >
         {/* Visual */}
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-b from-white/[0.04] to-transparent">
+        <div
+          onMouseMove={onTilt}
+          onMouseLeave={resetTilt}
+          className="relative aspect-square overflow-hidden bg-gradient-to-b from-white/[0.04] to-transparent [perspective:800px]"
+        >
           <div className="pointer-events-none absolute inset-0 bg-radial-glow opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
           <div className="absolute left-4 top-4 z-10 flex flex-col gap-1.5">
@@ -102,9 +121,10 @@ export function ProductCard({
           </button>
 
           <motion.div
-            className="absolute inset-0 flex items-center justify-center p-8"
-            whileHover={{ scale: 1.06, rotate: -2 }}
+            style={{ rotateX: srx, rotateY: sry }}
+            whileHover={{ scale: 1.06 }}
             transition={{ type: "spring", stiffness: 200, damping: 18 }}
+            className="absolute inset-0 flex items-center justify-center p-8"
           >
             <ProductRender
               kind={product.render}

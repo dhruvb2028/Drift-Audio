@@ -7,11 +7,13 @@ import { ArrowRight, ChevronDown } from "lucide-react";
 import { ProductRender } from "@/components/ui/product-render";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CountUp } from "@/components/ui/count-up";
+import { Magnetic } from "@/components/ui/magnetic";
 
 const STATS = [
-  { value: "45dB", label: "Adaptive ANC" },
-  { value: "70h", label: "Max battery" },
-  { value: "2M+", label: "Units sold" },
+  { value: 45, suffix: "dB", label: "Adaptive ANC" },
+  { value: 70, suffix: "h", label: "Max battery" },
+  { value: 2, suffix: "M+", label: "Units sold" },
 ];
 
 export function Hero() {
@@ -29,9 +31,19 @@ export function Hero() {
       ref={ref}
       className="relative overflow-hidden px-4 pb-16 pt-10 sm:pt-16"
     >
-      {/* Background glow + grid */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
+      {/* Background aurora + grid */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute left-1/2 top-0 h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-brand/20 blur-[120px]" />
+        <motion.div
+          animate={{ x: [0, 70, 0], y: [0, -30, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute left-[18%] top-8 h-72 w-72 rounded-full bg-brand/25 blur-[110px]"
+        />
+        <motion.div
+          animate={{ x: [0, -60, 0], y: [0, 40, 0] }}
+          transition={{ duration: 19, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute right-[16%] top-24 h-72 w-72 rounded-full bg-fuchsia-600/12 blur-[120px]"
+        />
         <div className="absolute inset-0 bg-grid-faint [background-size:56px_56px] [mask-image:radial-gradient(70%_60%_at_50%_30%,#000,transparent)]" />
       </div>
 
@@ -76,15 +88,19 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.25 }}
             className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start"
           >
-            <Link href="/products" className={buttonVariants({ size: "lg" })}>
-              Shop the range <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/products/airwave-pods-pro"
-              className={buttonVariants({ variant: "outline", size: "lg" })}
-            >
-              Explore Pods Pro
-            </Link>
+            <Magnetic className="inline-block">
+              <Link href="/products" className={buttonVariants({ size: "lg" })}>
+                Shop the range <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Magnetic>
+            <Magnetic className="inline-block">
+              <Link
+                href="/products/airwave-pods-pro"
+                className={buttonVariants({ variant: "outline", size: "lg" })}
+              >
+                Explore Pods Pro
+              </Link>
+            </Magnetic>
           </motion.div>
 
           {/* Stats */}
@@ -97,7 +113,7 @@ export function Hero() {
             {STATS.map((s) => (
               <div key={s.label}>
                 <dt className="font-display text-3xl font-bold text-white">
-                  {s.value}
+                  <CountUp value={s.value} suffix={s.suffix} />
                 </dt>
                 <dd className="mt-1 text-xs uppercase tracking-wider text-white/45">
                   {s.label}

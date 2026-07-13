@@ -26,8 +26,8 @@ const COLUMNS = [
     links: [
       { label: "Help Center", href: "/contact" },
       { label: "Track Order", href: "/track" },
-      { label: "Warranty", href: "#" },
-      { label: "Shipping", href: "#" },
+      { label: "Warranty", href: "/warranty" },
+      { label: "Shipping", href: "/shipping" },
     ],
   },
 ];
@@ -110,11 +110,18 @@ export function Footer() {
               limits.
             </p>
             <div className="mt-5 flex gap-2">
-              {[Instagram, Twitter, Youtube, Facebook].map((Icon, i) => (
+              {[
+                { Icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+                { Icon: Twitter, href: "https://x.com", label: "X (Twitter)" },
+                { Icon: Youtube, href: "https://youtube.com", label: "YouTube" },
+                { Icon: Facebook, href: "https://facebook.com", label: "Facebook" },
+              ].map(({ Icon, href, label }) => (
                 <a
-                  key={i}
-                  href="#"
-                  aria-label="Social link"
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/60 transition-colors hover:border-brand/40 hover:text-white cursor-pointer"
                 >
                   <Icon className="h-4 w-4" />
@@ -147,13 +154,13 @@ export function Footer() {
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-sm text-white/40 md:flex-row">
           <p>© 2026 DRIFT AUDIO. Concept portfolio project — not a real store.</p>
           <div className="flex gap-5">
-            <Link href="#" className="hover:text-white">
+            <Link href="/privacy" className="hover:text-white">
               Privacy
             </Link>
-            <Link href="#" className="hover:text-white">
+            <Link href="/terms" className="hover:text-white">
               Terms
             </Link>
-            <Link href="#" className="hover:text-white">
+            <Link href="/cookies" className="hover:text-white">
               Cookies
             </Link>
           </div>

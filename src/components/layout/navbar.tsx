@@ -51,9 +51,10 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-full px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"
+                className="group/nav relative rounded-full px-3 py-2 text-sm font-medium text-white/70 transition-colors hover:text-white"
               >
                 {link.label}
+                <span className="absolute inset-x-3 -bottom-0.5 h-0.5 origin-left scale-x-0 rounded-full bg-brand-gradient transition-transform duration-300 group-hover/nav:scale-x-100" />
               </Link>
             ))}
           </nav>

@@ -6,6 +6,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { ProductRender } from "@/components/ui/product-render";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CountUp } from "@/components/ui/count-up";
 
 export const metadata: Metadata = {
   title: "About",
@@ -14,10 +15,10 @@ export const metadata: Metadata = {
 };
 
 const STATS = [
-  { value: "2M+", label: "Customers" },
-  { value: "40+", label: "Countries" },
-  { value: "4.7★", label: "Avg. rating" },
-  { value: "2021", label: "Founded" },
+  { value: 2, suffix: "M+", decimals: 0, label: "Customers" },
+  { value: 40, suffix: "+", decimals: 0, label: "Countries" },
+  { value: 4.7, suffix: "★", decimals: 1, label: "Avg. rating" },
+  { value: 2021, suffix: "", decimals: 0, label: "Founded" },
 ];
 
 const VALUES = [
@@ -71,7 +72,9 @@ export default function AboutPage() {
         <Reveal className="grid grid-cols-2 gap-4 rounded-3xl border border-white/10 bg-card p-8 md:grid-cols-4">
           {STATS.map((s) => (
             <div key={s.label} className="text-center">
-              <div className="font-display text-4xl font-bold text-white">{s.value}</div>
+              <div className="font-display text-4xl font-bold text-white">
+                <CountUp value={s.value} suffix={s.suffix} decimals={s.decimals} />
+              </div>
               <div className="mt-1 text-sm uppercase tracking-wider text-white/45">
                 {s.label}
               </div>
