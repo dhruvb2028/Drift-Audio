@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { NAV_LINKS } from "@/lib/nav";
 import { Logo } from "./logo";
 import { CurrencyToggle } from "./currency-toggle";
+import { MobileAuth } from "./auth-buttons";
 import { buttonVariants } from "@/components/ui/button";
 
 export function MobileMenu({
@@ -64,6 +65,7 @@ export function MobileMenu({
             </nav>
 
             <div className="mt-auto space-y-4">
+              <MobileAuth onNavigate={onClose} />
               <CurrencyToggle className="w-full justify-center" />
               <Link
                 href="/products"

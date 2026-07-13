@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, DM_Sans } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import "./globals.css";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -49,7 +51,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return (
+  const tree = (
     <html lang="en" className={`dark ${display.variable} ${body.variable}`}>
       <body className="noise min-h-screen bg-background text-foreground">
         <Navbar />
@@ -63,4 +65,24 @@ export default function RootLayout({
       </body>
     </html>
   );
+
+  // Enable Clerk only when configured, so the site works without auth keys.
+  if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    return (
+      <ClerkProvider
+        appearance={{
+          theme: dark,
+          variables: {
+            colorPrimary: "#EE1C25",
+            colorBackground: "#101010",
+            borderRadius: "0.75rem",
+          },
+        }}
+      >
+        {tree}
+      </ClerkProvider>
+    );
+  }
+
+  return tree;
 }
