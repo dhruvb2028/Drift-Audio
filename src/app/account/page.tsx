@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { currentUser } from "@clerk/nextjs/server";
+import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { AccountClient } from "@/components/account/account-client";
 
 export const metadata: Metadata = {
@@ -43,9 +43,22 @@ export default async function AccountPage() {
     year: "numeric",
   });
 
-  // Treat an account created in the last 10 minutes as a first-time visit, so a
-  // brand-new registrant is welcomed rather than greeted with "welcome back".
-  const isNewUser = Date.now() - new Date(user.createdAt).getTime() < 10 * 60 * 1000;
+  // Show the first-time welcome exactly once. The very first visit has no
+  // `hasSeenWelcome` flag; we set it immediately so every later visit — even
+  // seconds later — is greeted with "welcome back" instead.
+  const isNewUser = !(user.publicMetadata as { hasSeenWelcome?: boolean })
+    .hasSeenWelcome;
+  if (isNewUser) {
+    try {
+      const client = await clerkClient();
+      await client.users.updateUserMetadata(user.id, {
+        publicMetadata: { hasSeenWelcome: true },
+      });
+    } catch {
+      // Non-fatal: if the flag can't be persisted, worst case the welcome
+      // shows again on the next visit.
+    }
+  }
 
   return (
     <AccountClient
