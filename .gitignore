@@ -36,3 +36,5 @@ __pycache__/
 
 # Auto-generated design-system notes
 /design-system/
+
+/src/generated/prisma

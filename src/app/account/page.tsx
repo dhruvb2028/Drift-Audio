@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser, clerkClient } from "@clerk/nextjs/server";
-import { AccountClient } from "@/components/account/account-client";
+import { AccountClient, type OrderView } from "@/components/account/account-client";
+import { getOrdersForUser } from "@/lib/orders";
 
 export const metadata: Metadata = {
   title: "Your account",
@@ -60,6 +61,26 @@ export default async function AccountPage() {
     }
   }
 
+  // Real order history for this user (empty until a DB is configured / an order
+  // is placed). Mapped to plain, serializable props for the client component.
+  const orders: OrderView[] = (await getOrdersForUser(user.id)).map((o) => ({
+    id: o.id,
+    date: new Date(o.createdAt).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }),
+    status: o.status,
+    amountTotal: o.amountTotal,
+    currency: o.currency === "INR" ? "INR" : "USD",
+    items: o.items.map((it) => ({
+      name: it.name,
+      colorName: it.colorName,
+      quantity: it.quantity,
+      unitAmount: it.unitAmount,
+    })),
+  }));
+
   return (
     <AccountClient
       firstName={firstName}
@@ -68,6 +89,7 @@ export default async function AccountPage() {
       imageUrl={user.imageUrl}
       memberSince={memberSince}
       isNewUser={isNewUser}
+      orders={orders}
     />
   );
 }

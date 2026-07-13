@@ -1,0 +1,40 @@
+// DRIFT AUDIO — data model
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// A completed, paid order. Only ever written server-side from a
+/// Stripe-verified checkout session — never from client input.
+model Order {
+  id              String      @id @default(cuid())
+  userId          String // Clerk user id
+  email           String
+  stripeSessionId String      @unique // idempotency key — one order per session
+  amountTotal     Int // total charged, in the smallest currency unit (from Stripe)
+  currency        String
+  status          String // "paid" — derived solely from Stripe
+  createdAt       DateTime    @default(now())
+  items           OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productSlug String
+  name        String
+  colorName   String?
+  unitAmount  Int // per-unit price, smallest currency unit
+  quantity    Int
+
+  @@index([orderId])
+}

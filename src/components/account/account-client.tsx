@@ -12,8 +12,24 @@ import {
   ShieldCheck,
   ArrowRight,
   Truck,
+  Check,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { formatPrice } from "@/lib/utils";
+
+export interface OrderView {
+  id: string;
+  date: string;
+  status: string;
+  amountTotal: number; // smallest currency unit
+  currency: "USD" | "INR";
+  items: {
+    name: string;
+    colorName: string | null;
+    quantity: number;
+    unitAmount: number;
+  }[];
+}
 
 interface AccountClientProps {
   firstName: string | null;
@@ -22,6 +38,7 @@ interface AccountClientProps {
   imageUrl: string;
   memberSince: string;
   isNewUser: boolean;
+  orders: OrderView[];
 }
 
 export function AccountClient({
@@ -31,6 +48,7 @@ export function AccountClient({
   imageUrl,
   memberSince,
   isNewUser,
+  orders,
 }: AccountClientProps) {
   const { openUserProfile, signOut } = useClerk();
 
@@ -92,6 +110,95 @@ export function AccountClient({
           </div>
         </div>
       </motion.div>
+
+      {/* Order history */}
+      <motion.section
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.08 }}
+        className="mt-6 rounded-3xl border border-white/10 bg-card p-6 sm:p-8"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold text-white">
+            Your orders
+          </h2>
+          {orders.length > 0 && (
+            <span className="text-sm text-white/45">
+              {orders.length} order{orders.length > 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+
+        {orders.length === 0 ? (
+          <div className="mt-4 flex flex-col items-center rounded-2xl border border-dashed border-white/12 bg-white/[0.02] px-6 py-10 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04]">
+              <Package className="h-6 w-6 text-white/40" />
+            </div>
+            <p className="mt-4 font-medium text-white">No orders yet</p>
+            <p className="mt-1 max-w-xs text-sm text-white/50">
+              When you complete a purchase, it&apos;ll show up here with full
+              details.
+            </p>
+            <Link
+              href="/products"
+              className={buttonVariants({ size: "md", className: "mt-5" })}
+            >
+              Start shopping
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-5 space-y-4">
+            {orders.map((o) => (
+              <div
+                key={o.id}
+                className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:p-5"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/8 pb-3">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-300">
+                      <Check className="h-3.5 w-3.5" /> Paid
+                    </span>
+                    <span className="text-sm text-white/50">{o.date}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-display font-bold text-white">
+                      {formatPrice(o.amountTotal / 100, o.currency)}
+                    </div>
+                    <div className="text-xs text-white/35">
+                      #{o.id.slice(-8).toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {o.items.length > 0 ? (
+                    o.items.map((it, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between gap-3 text-sm"
+                      >
+                        <span className="min-w-0 truncate text-white/70">
+                          {it.quantity}× {it.name}
+                          {it.colorName ? ` · ${it.colorName}` : ""}
+                        </span>
+                        <span className="shrink-0 text-white/50">
+                          {formatPrice(
+                            (it.unitAmount * it.quantity) / 100,
+                            o.currency
+                          )}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-white/40">
+                      Order total {formatPrice(o.amountTotal / 100, o.currency)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.section>
 
       {/* Shortcut cards */}
       <div className="mt-6 grid gap-4 sm:grid-cols-3">

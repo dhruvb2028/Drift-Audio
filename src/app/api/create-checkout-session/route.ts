@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getStripeServer } from "@/lib/stripe";
 import { computeOrderFromLines, findCoupon } from "@/lib/commerce";
 import { PRODUCTS } from "@/lib/products";
+import type { StoredCartItem } from "@/lib/orders";
 import type { Currency } from "@/lib/utils";
 
 export const runtime = "nodejs";
@@ -21,14 +22,17 @@ interface Line {
 export async function POST(req: Request) {
   try {
     // Gate checkout behind authentication (server-side, so it can't be bypassed).
+    // Capture the user id so we can attribute the resulting order to them.
+    let userId: string | null = null;
     if (authRequired) {
-      const { userId } = await auth();
-      if (!userId) {
+      const session = await auth();
+      if (!session.userId) {
         return NextResponse.json(
           { error: "Please sign in to check out.", code: "auth_required" },
           { status: 401 }
         );
       }
+      userId = session.userId;
     }
 
     const stripe = getStripeServer();
@@ -49,6 +53,8 @@ export async function POST(req: Request) {
     const cur = currency.toLowerCase();
 
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    // Compact per-line record persisted with the order (via session metadata).
+    const storedCart: StoredCartItem[] = [];
     for (const l of items) {
       const p = PRODUCTS.find((x) => x.slug === l.slug);
       if (!p) continue;
@@ -65,6 +71,7 @@ export async function POST(req: Request) {
           },
         },
       });
+      storedCart.push({ slug: p.slug, qty, colorName: l.colorName ?? null, unit });
     }
 
     if (line_items.length === 0) {
@@ -88,6 +95,10 @@ export async function POST(req: Request) {
       });
     }
 
+    // Stripe caps each metadata value at 500 chars; if the cart is unusually
+    // large we drop the itemization (the order + Stripe total still persist).
+    const cartJson = JSON.stringify(storedCart);
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items,
@@ -98,7 +109,12 @@ export async function POST(req: Request) {
       phone_number_collection: { enabled: true },
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cart?canceled=1`,
-      metadata: { project: "drift-audio-demo", couponCode: couponCode ?? "" },
+      metadata: {
+        project: "drift-audio-demo",
+        couponCode: couponCode ?? "",
+        userId: userId ?? "",
+        cart: cartJson.length <= 500 ? cartJson : "",
+      },
     });
 
     return NextResponse.json({ url: session.url });
