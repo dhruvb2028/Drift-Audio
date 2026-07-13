@@ -1,12 +1,26 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { getStripeServer } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Session details include customer email/name, so require auth when Clerk is on.
+const authRequired = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 /** Retrieve a Checkout Session to confirm payment on the success page. */
 export async function GET(req: Request) {
   try {
+    if (authRequired) {
+      const { userId } = await auth();
+      if (!userId) {
+        return NextResponse.json(
+          { error: "Please sign in to view this order.", code: "auth_required" },
+          { status: 401 }
+        );
+      }
+    }
+
     const stripe = getStripeServer();
     const id = new URL(req.url).searchParams.get("id");
     if (!id) {

@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
+import { UserRound } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 
 const hasClerk = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -17,7 +19,17 @@ function NavAuthInner() {
     return <div className="h-9 w-9 animate-pulse rounded-full bg-white/5" />;
   }
   if (isSignedIn) {
-    return <UserButton appearance={{ elements: { avatarBox: "h-9 w-9" } }} />;
+    return (
+      <UserButton appearance={{ elements: { avatarBox: "h-9 w-9" } }}>
+        <UserButton.MenuItems>
+          <UserButton.Link
+            label="Your account"
+            labelIcon={<UserRound className="h-4 w-4" />}
+            href="/account"
+          />
+        </UserButton.MenuItems>
+      </UserButton>
+    );
   }
   return (
     <SignInButton mode="modal">
@@ -41,7 +53,13 @@ function MobileAuthInner({ onNavigate }: { onNavigate?: () => void }) {
     return (
       <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2">
         <UserButton appearance={{ elements: { avatarBox: "h-8 w-8" } }} />
-        <span className="text-sm text-white/70">Your account</span>
+        <Link
+          href="/account"
+          onClick={onNavigate}
+          className="text-sm text-white/70 transition-colors hover:text-white"
+        >
+          Your account
+        </Link>
       </div>
     );
   }
