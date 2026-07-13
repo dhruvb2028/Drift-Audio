@@ -3,7 +3,17 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CheckCircle2, Lock, ShoppingBag, Info, Loader2 } from "lucide-react";
+import {
+  CheckCircle2,
+  Lock,
+  ShoppingBag,
+  Loader2,
+  ShieldCheck,
+  RefreshCw,
+  Truck,
+  ChevronLeft,
+  BadgeCheck,
+} from "lucide-react";
 import {
   Elements,
   PaymentElement,
@@ -17,6 +27,7 @@ import { useMounted } from "@/lib/use-mounted";
 import { getStripe, hasStripeKey } from "@/lib/stripe-client";
 import { ProductRender } from "@/components/ui/product-render";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { PaymentMarks } from "@/components/checkout/payment-marks";
 import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +72,18 @@ export function CheckoutClient() {
   const itemsKey = items.map((i) => `${i.slug}:${i.qty}`).join(",");
   const stripeConfigured = hasStripeKey();
 
-  // Create / refresh the PaymentIntent whenever the order changes.
+  // Delivery window (client-only render, so no hydration concern).
+  const delivery = useMemo(() => {
+    const fmt = (d: Date) =>
+      d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    const now = new Date();
+    const from = new Date(now);
+    from.setDate(now.getDate() + 3);
+    const to = new Date(now);
+    to.setDate(now.getDate() + 5);
+    return `${fmt(from)} – ${fmt(to)}`;
+  }, []);
+
   useEffect(() => {
     if (!mounted || placed || items.length === 0 || !stripeConfigured) return;
     let cancelled = false;
@@ -134,13 +156,16 @@ export function CheckoutClient() {
     () =>
       ({
         theme: "night" as const,
+        labels: "floating" as const,
         variables: {
           colorPrimary: "#EE1C25",
-          colorBackground: "#121212",
+          colorBackground: "#141414",
           colorText: "#f5f5f5",
+          colorTextSecondary: "#a1a1aa",
           colorDanger: "#ff6b6b",
-          borderRadius: "10px",
+          borderRadius: "12px",
           fontFamily: "DM Sans, system-ui, sans-serif",
+          spacingUnit: "4px",
         },
       }),
     []
@@ -150,7 +175,7 @@ export function CheckoutClient() {
     return <div className="container py-20 text-white/50">Loading…</div>;
   }
 
-  // Success
+  // ---- Success ----
   if (placed) {
     return (
       <div className="container flex flex-col items-center py-24 text-center">
@@ -158,29 +183,39 @@ export function CheckoutClient() {
           initial={{ scale: 0.6, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 18 }}
-          className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/15"
+          className="relative flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/15"
         >
-          <CheckCircle2 className="h-11 w-11 text-emerald-400" />
+          <motion.span
+            className="absolute inset-0 rounded-full ring-2 ring-emerald-400/40"
+            initial={{ scale: 0.8, opacity: 0.8 }}
+            animate={{ scale: 1.4, opacity: 0 }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+          />
+          <CheckCircle2 className="h-12 w-12 text-emerald-400" />
         </motion.div>
         <h1 className="mt-6 font-display text-4xl font-bold text-white">
           Payment successful
         </h1>
         <p className="mt-3 max-w-md text-white/60">
-          Thanks for your order! Your Stripe payment reference is{" "}
-          <span className="break-all font-mono text-sm text-white">{orderId}</span>.
-          A receipt would be emailed in a live store.
+          Thank you for your order! A confirmation would be emailed in a live
+          store. Your Stripe reference:
         </p>
-        <Link
-          href="/products"
-          className={buttonVariants({ size: "lg", className: "mt-8" })}
-        >
-          Continue shopping
-        </Link>
+        <p className="mt-2 break-all rounded-full bg-white/[0.05] px-4 py-1.5 font-mono text-xs text-white/70">
+          {orderId}
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link href="/products" className={buttonVariants({ size: "lg" })}>
+            Continue shopping
+          </Link>
+          <Link href="/track" className={buttonVariants({ variant: "outline", size: "lg" })}>
+            Track order
+          </Link>
+        </div>
       </div>
     );
   }
 
-  // Empty cart
+  // ---- Empty ----
   if (items.length === 0) {
     return (
       <div className="container flex flex-col items-center py-24 text-center">
@@ -193,10 +228,7 @@ export function CheckoutClient() {
         <p className="mt-2 max-w-sm text-white/55">
           Add a product before heading to checkout.
         </p>
-        <Link
-          href="/products"
-          className={buttonVariants({ size: "lg", className: "mt-8" })}
-        >
+        <Link href="/products" className={buttonVariants({ size: "lg", className: "mt-8" })}>
           Shop all products
         </Link>
       </div>
@@ -204,120 +236,197 @@ export function CheckoutClient() {
   }
 
   return (
-    <div className="container py-10">
-      <h1 className="font-display text-4xl font-bold text-white">Checkout</h1>
-
-      {/* Test-mode banner */}
-      <div className="mt-5 flex items-start gap-3 rounded-2xl border border-sky-400/25 bg-sky-400/10 px-4 py-3 text-sm text-sky-200">
-        <Info className="mt-0.5 h-4 w-4 shrink-0" />
-        <span>
-          <strong>Stripe test mode.</strong> Pay with card{" "}
-          <span className="font-mono">4242 4242 4242 4242</span>, any future expiry,
-          any CVC & ZIP. It&apos;s a real Stripe payment flow — no money moves.
-        </span>
+    <div className="container max-w-6xl py-10">
+      {/* Header */}
+      <div className="mb-8">
+        <Link
+          href="/cart"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-white/50 transition-colors hover:text-white"
+        >
+          <ChevronLeft className="h-4 w-4" /> Back to cart
+        </Link>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h1 className="font-display text-4xl font-bold text-white sm:text-5xl">
+            Secure checkout
+          </h1>
+          <span className="flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-1.5 text-sm font-medium text-emerald-300">
+            <Lock className="h-4 w-4" /> SSL encrypted
+          </span>
+        </div>
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
-        {/* Left: shipping */}
-        <div className="space-y-8">
-          <Fieldset title="Contact">
-            <Field
-              label="Email"
-              value={fields.email}
-              onChange={(v) => set("email", v)}
-              error={errors.email}
-              type="email"
-              placeholder="you@email.com"
-              className="sm:col-span-2"
-            />
-          </Fieldset>
-
-          <Fieldset title="Shipping address">
-            <Field label="First name" value={fields.firstName} onChange={(v) => set("firstName", v)} error={errors.firstName} />
-            <Field label="Last name" value={fields.lastName} onChange={(v) => set("lastName", v)} error={errors.lastName} />
-            <Field label="Address" value={fields.address} onChange={(v) => set("address", v)} error={errors.address} className="sm:col-span-2" />
-            <Field label="City" value={fields.city} onChange={(v) => set("city", v)} error={errors.city} />
-            <Field label="State" value={fields.state} onChange={(v) => set("state", v)} error={errors.state} />
-            <Field label="PIN / ZIP" value={fields.zip} onChange={(v) => set("zip", v)} error={errors.zip} inputMode="numeric" />
-            <Field label="Phone" value={fields.phone} onChange={(v) => set("phone", v)} error={errors.phone} inputMode="tel" />
-          </Fieldset>
-
-          {/* Payment */}
-          <Fieldset title="Payment" icon={<Lock className="h-4 w-4 text-white/40" />}>
-            <div className="sm:col-span-2">
-              {!stripeConfigured || initError ? (
-                <SetupNotice message={initError} />
-              ) : !clientSecret ? (
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-sm text-white/50">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {initLoading ? "Setting up secure payment…" : "Preparing payment…"}
-                </div>
-              ) : (
-                <Elements
-                  stripe={stripePromise}
-                  options={{ clientSecret, appearance }}
-                  key={clientSecret}
-                >
-                  <PaymentSection
-                    email={fields.email}
-                    validateShipping={validateShipping}
-                    totalLabel={formatPrice(order.total, currency)}
-                    onSuccess={handleSuccess}
-                  />
-                </Elements>
-              )}
+      <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
+        {/* LEFT — details + payment */}
+        <div className="space-y-5">
+          <StepCard step={1} title="Contact" delay={0}>
+            <div className="grid grid-cols-1 gap-4">
+              <Field
+                label="Email address"
+                value={fields.email}
+                onChange={(v) => set("email", v)}
+                error={errors.email}
+                type="email"
+                placeholder="you@email.com"
+                hint="Order confirmation & receipt sent here"
+              />
             </div>
-          </Fieldset>
+          </StepCard>
+
+          <StepCard step={2} title="Shipping address" delay={0.05}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="First name" value={fields.firstName} onChange={(v) => set("firstName", v)} error={errors.firstName} />
+              <Field label="Last name" value={fields.lastName} onChange={(v) => set("lastName", v)} error={errors.lastName} />
+              <Field label="Address" value={fields.address} onChange={(v) => set("address", v)} error={errors.address} className="sm:col-span-2" />
+              <Field label="City" value={fields.city} onChange={(v) => set("city", v)} error={errors.city} />
+              <Field label="State" value={fields.state} onChange={(v) => set("state", v)} error={errors.state} />
+              <Field label="PIN / ZIP" value={fields.zip} onChange={(v) => set("zip", v)} error={errors.zip} inputMode="numeric" />
+              <Field label="Phone" value={fields.phone} onChange={(v) => set("phone", v)} error={errors.phone} inputMode="tel" />
+            </div>
+          </StepCard>
+
+          <StepCard
+            step={3}
+            title="Payment"
+            delay={0.1}
+            aside={
+              <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-white/60">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" /> Secured by Stripe
+              </span>
+            }
+          >
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-sky-400/20 bg-sky-400/[0.07] px-3.5 py-2.5 text-xs text-sky-200">
+              <BadgeCheck className="h-4 w-4 shrink-0" />
+              Test mode — use <span className="font-mono">4242 4242 4242 4242</span>, any
+              future date, any CVC. No real charge.
+            </div>
+
+            {!stripeConfigured || initError ? (
+              <SetupNotice message={initError} />
+            ) : !clientSecret ? (
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-8 text-sm text-white/50">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {initLoading ? "Setting up secure payment…" : "Preparing payment…"}
+              </div>
+            ) : (
+              <Elements stripe={stripePromise} options={{ clientSecret, appearance }} key={clientSecret}>
+                <PaymentSection
+                  email={fields.email}
+                  validateShipping={validateShipping}
+                  totalLabel={formatPrice(order.total, currency)}
+                  onSuccess={handleSuccess}
+                />
+              </Elements>
+            )}
+          </StepCard>
         </div>
 
-        {/* Right: summary */}
+        {/* RIGHT — premium summary */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-3xl border border-white/10 bg-card p-6">
-            <h2 className="font-display text-lg font-semibold text-white">
-              Order summary
-            </h2>
-            <ul className="mt-5 space-y-4">
-              {items.map((item) => {
-                const price = currency === "USD" ? item.priceUSD : item.priceINR;
-                return (
-                  <li key={item.id} className="flex gap-3">
-                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] p-1.5">
-                      <ProductRender kind={item.render} color={item.colorHex} />
-                      <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-white/15 px-1 text-[10px] font-bold text-white">
-                        {item.qty}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-white">{item.name}</p>
-                      <p className="text-xs text-white/45">{item.colorName}</p>
-                    </div>
-                    <span className="text-sm font-medium text-white">
-                      {formatPrice(price * item.qty, currency)}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+          <div className="overflow-hidden rounded-3xl border border-white/10 bg-card">
+            <div className="h-1 w-full bg-brand-gradient" />
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-lg font-semibold text-white">
+                  Order summary
+                </h2>
+                <span className="text-sm text-white/45">
+                  {items.reduce((n, i) => n + i.qty, 0)} items
+                </span>
+              </div>
 
-            <div className="mt-5 space-y-2 border-t border-white/8 pt-5 text-sm">
-              <Row label="Subtotal" value={formatPrice(order.subtotal, currency)} />
-              {order.itemSavings > 0 && (
-                <Row label="Item savings" value={`− ${formatPrice(order.itemSavings, currency)}`} accent />
+              {/* Items */}
+              <ul className="mt-5 space-y-4">
+                {items.map((item) => {
+                  const price = currency === "USD" ? item.priceUSD : item.priceINR;
+                  return (
+                    <li key={item.id} className="flex gap-3">
+                      <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] p-2">
+                        <ProductRender kind={item.render} color={item.colorHex} />
+                        <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-gradient px-1 text-[10px] font-bold text-white">
+                          {item.qty}
+                        </span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-white">{item.name}</p>
+                        <p className="flex items-center gap-1.5 text-xs text-white/45">
+                          <span
+                            className="inline-block h-2.5 w-2.5 rounded-full ring-1 ring-white/20"
+                            style={{ background: item.colorHex }}
+                          />
+                          {item.colorName}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold text-white">
+                        {formatPrice(price * item.qty, currency)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {order.itemSavings + order.couponDiscount > 0 && (
+                <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3.5 py-2 text-sm font-medium text-emerald-300">
+                  <BadgeCheck className="h-4 w-4" />
+                  You&apos;re saving{" "}
+                  {formatPrice(order.itemSavings + order.couponDiscount, currency)}
+                </div>
               )}
-              {order.couponDiscount > 0 && (
-                <Row label={`Coupon ${order.coupon?.code}`} value={`− ${formatPrice(order.couponDiscount, currency)}`} accent />
-              )}
-              <Row label="Shipping" value={order.shipping === 0 ? "Free" : formatPrice(order.shipping, currency)} />
+
+              {/* Delivery estimate */}
+              <div className="mt-4 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
+                <Truck className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+                <div>
+                  <p className="text-sm font-medium text-white">
+                    {order.shipping === 0 ? "Free delivery" : "Standard delivery"}
+                  </p>
+                  <p className="text-xs text-white/50">Estimated arrival {delivery}</p>
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="mt-5 space-y-2 border-t border-white/8 pt-5 text-sm">
+                <Row label="Subtotal" value={formatPrice(order.subtotal, currency)} />
+                {order.itemSavings > 0 && (
+                  <Row label="Item savings" value={`− ${formatPrice(order.itemSavings, currency)}`} accent />
+                )}
+                {order.couponDiscount > 0 && (
+                  <Row label={`Coupon ${order.coupon?.code}`} value={`− ${formatPrice(order.couponDiscount, currency)}`} accent />
+                )}
+                <Row
+                  label="Shipping"
+                  value={order.shipping === 0 ? "Free" : formatPrice(order.shipping, currency)}
+                />
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-4">
+                <span className="font-medium text-white">Total</span>
+                <div className="text-right">
+                  <span className="font-display text-2xl font-bold text-white">
+                    {formatPrice(order.total, currency)}
+                  </span>
+                  <p className="text-xs text-white/40">Incl. all taxes</p>
+                </div>
+              </div>
             </div>
-            <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-4">
-              <span className="font-medium text-white">Total</span>
-              <span className="font-display text-2xl font-bold text-white">
-                {formatPrice(order.total, currency)}
-              </span>
+
+            {/* Trust footer */}
+            <div className="space-y-3 border-t border-white/10 bg-white/[0.02] p-6">
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { icon: RefreshCw, label: "30-day returns" },
+                  { icon: ShieldCheck, label: "2-yr warranty" },
+                  { icon: Lock, label: "Secure pay" },
+                ].map((t) => (
+                  <div key={t.label} className="flex flex-col items-center gap-1.5 text-center">
+                    <t.icon className="h-5 w-5 text-brand" />
+                    <span className="text-[11px] leading-tight text-white/55">{t.label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between border-t border-white/8 pt-3">
+                <span className="text-xs text-white/40">We accept</span>
+                <PaymentMarks />
+              </div>
             </div>
-            <p className="mt-4 text-center text-xs text-white/40">
-              Secured by Stripe · your card details never touch our servers.
-            </p>
           </div>
         </aside>
       </div>
@@ -371,7 +480,11 @@ function PaymentSection({
   return (
     <form onSubmit={pay} className="space-y-4">
       <PaymentElement options={{ layout: "tabs" }} />
-      {payError && <p className="text-sm text-brand-300">{payError}</p>}
+      {payError && (
+        <p className="rounded-lg bg-brand/10 px-3 py-2 text-sm text-brand-300">
+          {payError}
+        </p>
+      )}
       <Button type="submit" size="lg" disabled={!stripe || processing} className="w-full">
         {processing ? (
           <>
@@ -383,44 +496,58 @@ function PaymentSection({
           </>
         )}
       </Button>
+      <p className="flex items-center justify-center gap-1.5 text-center text-xs text-white/40">
+        <Lock className="h-3 w-3" /> Payments are encrypted & processed by Stripe.
+      </p>
     </form>
+  );
+}
+
+function StepCard({
+  step,
+  title,
+  aside,
+  delay,
+  children,
+}: {
+  step: number;
+  title: string;
+  aside?: React.ReactNode;
+  delay: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
+      className="rounded-3xl border border-white/10 bg-card p-6 sm:p-7"
+    >
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-sm font-bold text-white">
+            {step}
+          </span>
+          <h2 className="font-display text-lg font-semibold text-white">{title}</h2>
+        </div>
+        {aside}
+      </div>
+      {children}
+    </motion.section>
   );
 }
 
 function SetupNotice({ message }: { message?: string }) {
   return (
     <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-4 text-sm text-amber-200">
-      <p className="font-medium">
-        {message || "Stripe isn't configured yet."}
-      </p>
+      <p className="font-medium">{message || "Stripe isn't configured yet."}</p>
       <p className="mt-2 text-amber-200/80">
-        Add your test keys to <span className="font-mono">.env.local</span> and
-        restart the dev server:
+        Add your test keys to <span className="font-mono">.env.local</span> and restart:
       </p>
       <pre className="mt-2 overflow-x-auto rounded-lg bg-black/40 p-3 text-xs text-amber-100">
 {`STRIPE_SECRET_KEY=sk_test_…
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_…`}
       </pre>
-    </div>
-  );
-}
-
-function Fieldset({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-3xl border border-white/10 bg-card p-6">
-      <div className="mb-4 flex items-center gap-2">
-        <h2 className="font-display text-lg font-semibold text-white">{title}</h2>
-        {icon}
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{children}</div>
     </div>
   );
 }
@@ -434,6 +561,7 @@ function Field({
   placeholder,
   className,
   inputMode,
+  hint,
 }: {
   label: string;
   value: string;
@@ -443,11 +571,12 @@ function Field({
   placeholder?: string;
   className?: string;
   inputMode?: "numeric" | "tel" | "email";
+  hint?: string;
 }) {
-  const id = label.toLowerCase().replace(/\s/g, "-");
+  const id = label.toLowerCase().replace(/[^a-z]/g, "-");
   return (
     <div className={className} data-error={error ? "true" : undefined}>
-      <label htmlFor={id} className="mb-1.5 block text-sm text-white/60">
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-white/70">
         {label}
       </label>
       <input
@@ -459,11 +588,17 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={!!error}
         className={cn(
-          "h-11 w-full rounded-xl border bg-white/[0.04] px-4 text-white placeholder:text-white/30 focus:outline-none",
-          error ? "border-brand/60 focus:border-brand" : "border-white/12 focus:border-brand/50"
+          "h-12 w-full rounded-xl border bg-white/[0.03] px-4 text-white placeholder:text-white/30 transition-all focus:outline-none focus:ring-2",
+          error
+            ? "border-brand/60 focus:border-brand focus:ring-brand/20"
+            : "border-white/10 focus:border-brand/50 focus:ring-brand/15"
         )}
       />
-      {error && <p className="mt-1 text-xs text-brand-300">{error}</p>}
+      {error ? (
+        <p className="mt-1 text-xs text-brand-300">{error}</p>
+      ) : hint ? (
+        <p className="mt-1 text-xs text-white/35">{hint}</p>
+      ) : null}
     </div>
   );
 }
