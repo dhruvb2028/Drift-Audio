@@ -69,10 +69,16 @@ function ShowcaseBlock({ block }: { block: Block }) {
         )}
       >
         <div
-          className="absolute h-64 w-64 rounded-full blur-[90px]"
-          style={{ background: `${block.color}33` }}
+          className="absolute h-64 w-64 animate-pulse-glow rounded-full blur-[90px]"
+          style={{ background: `${block.color}40` }}
         />
-        <div className="relative w-full max-w-sm">
+        <div
+          className="absolute h-72 w-72 animate-spin-slow rounded-full opacity-40 blur-2xl"
+          style={{
+            background: `conic-gradient(from 0deg, transparent, ${block.color}, transparent 55%, ${block.color}88, transparent)`,
+          }}
+        />
+        <div className="relative w-full max-w-sm animate-float">
           <ProductRender kind={block.render} color={block.color} />
         </div>
       </motion.div>

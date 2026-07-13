@@ -128,6 +128,10 @@ const config: Config = {
           "0%": { transform: "translateX(-160%) skewX(-12deg)" },
           "100%": { transform: "translateX(260%) skewX(-12deg)" },
         },
+        bob: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
       },
       animation: {
         marquee: "marquee var(--marquee-duration, 32s) linear infinite",
@@ -143,6 +147,7 @@ const config: Config = {
         rise: "rise 6s linear infinite",
         drift: "drift 16s ease-in-out infinite",
         shine: "shine 3.5s ease-in-out infinite",
+        bob: "bob 3s ease-in-out infinite",
       },
     },
   },

@@ -32,13 +32,16 @@ export function FeatureHighlights() {
         className="mb-12"
       />
       <RevealGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {FEATURES.map((f) => (
+        {FEATURES.map((f, i) => (
           <motion.div
             key={f.title}
             variants={revealItem}
-            className="group flex items-start gap-4 rounded-2xl border border-white/10 bg-card p-6 transition-colors hover:border-white/20"
+            className="group flex items-start gap-4 rounded-2xl border border-white/10 bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-brand/30"
           >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand/12 text-brand transition-colors group-hover:bg-brand group-hover:text-white">
+            <span
+              className="flex h-12 w-12 shrink-0 animate-bob items-center justify-center rounded-xl bg-brand/12 text-brand transition-colors duration-300 group-hover:bg-brand group-hover:text-white"
+              style={{ animationDelay: `${i * 0.35}s` }}
+            >
               <f.icon className="h-6 w-6" />
             </span>
             <div>
