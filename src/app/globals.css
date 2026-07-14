@@ -148,3 +148,26 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Mobile GPU budget: the ambient glows are the most expensive thing we paint.
+   Large blur radii cost a lot per frame on phones, and at these sizes a
+   smaller radius is visually almost identical — so trim it on small screens. */
+@media (max-width: 640px) {
+  .blur-3xl {
+    --tw-blur: blur(40px);
+  }
+  .blur-2xl {
+    --tw-blur: blur(24px);
+  }
+  [class*="blur-\["] {
+    --tw-blur: blur(48px);
+  }
+}
+
+/* Kill the blue tap-flash on Android/iOS taps. */
+@media (hover: none) {
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

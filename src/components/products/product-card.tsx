@@ -111,10 +111,12 @@ export function ProductCard({
               toggleWish(product.slug);
             }}
             className={cn(
-              "absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border transition-all cursor-pointer",
+              // 44px tap target on touch; the tighter 36px on desktop.
+              "absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border transition-all cursor-pointer sm:h-9 sm:w-9",
               wished
                 ? "border-brand/40 bg-brand/15 text-brand"
-                : "border-white/10 bg-black/30 text-white/70 opacity-0 backdrop-blur-sm hover:text-white group-hover:opacity-100"
+                : // Always visible on touch (no hover there); hover-reveal on desktop.
+                  "border-white/10 bg-black/30 text-white/70 backdrop-blur-sm hover:text-white sm:opacity-0 sm:group-hover:opacity-100"
             )}
           >
             <Heart className={cn("h-4 w-4", wished && "fill-current")} />
@@ -141,14 +143,14 @@ export function ProductCard({
                 e.preventDefault();
                 openQuickView(product.slug);
               }}
-              className="flex h-11 w-11 translate-y-2 items-center justify-center rounded-full border border-white/12 bg-black/40 text-white opacity-0 backdrop-blur-sm transition-all duration-300 hover:bg-white/15 group-hover:translate-y-0 group-hover:opacity-100"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-black/40 text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/15 sm:translate-y-2 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100"
             >
               <Eye className="h-5 w-5" />
             </button>
             <button
               aria-label={`Add ${product.name} to cart`}
               onClick={quickAdd}
-              className="flex h-11 w-11 translate-y-2 items-center justify-center rounded-full bg-brand-gradient text-white opacity-0 shadow-[0_10px_30px_-10px_rgba(238,28,37,0.8)] transition-all duration-300 hover:brightness-110 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-gradient text-white shadow-[0_10px_30px_-10px_rgba(238,28,37,0.8)] transition-all duration-300 hover:brightness-110 focus-visible:translate-y-0 focus-visible:opacity-100 sm:translate-y-2 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100"
             >
               <Plus className="h-5 w-5" />
             </button>
@@ -180,7 +182,8 @@ export function ProductCard({
               aria-label="Add to compare"
               title="Compare"
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors cursor-pointer",
+                // 44px tap target on touch; the tighter 32px on desktop.
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors cursor-pointer sm:h-8 sm:w-8",
                 compared
                   ? "border-brand/40 bg-brand/15 text-brand"
                   : "border-white/10 text-white/40 hover:text-white"

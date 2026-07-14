@@ -150,7 +150,7 @@ export function CartDrawer() {
                             <button
                               onClick={() => remove(item.id)}
                               aria-label={`Remove ${item.name}`}
-                              className="shrink-0 text-white/40 transition-colors hover:text-brand cursor-pointer"
+                              className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/40 transition-colors hover:text-brand cursor-pointer sm:-mr-1 sm:-mt-1 sm:h-8 sm:w-8"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -167,7 +167,7 @@ export function CartDrawer() {
                               <button
                                 onClick={() => setQty(item.id, item.qty - 1)}
                                 aria-label="Decrease quantity"
-                                className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:text-white cursor-pointer"
+                                className="flex h-11 w-11 items-center justify-center rounded-full text-white/70 hover:text-white cursor-pointer sm:h-8 sm:w-8"
                               >
                                 <Minus className="h-3.5 w-3.5" />
                               </button>
@@ -177,7 +177,7 @@ export function CartDrawer() {
                               <button
                                 onClick={() => setQty(item.id, item.qty + 1)}
                                 aria-label="Increase quantity"
-                                className="flex h-8 w-8 items-center justify-center rounded-full text-white/70 hover:text-white cursor-pointer"
+                                className="flex h-11 w-11 items-center justify-center rounded-full text-white/70 hover:text-white cursor-pointer sm:h-8 sm:w-8"
                               >
                                 <Plus className="h-3.5 w-3.5" />
                               </button>

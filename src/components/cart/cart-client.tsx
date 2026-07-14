@@ -161,7 +161,7 @@ export function CartClient() {
                     <button
                       onClick={() => remove(item.id)}
                       aria-label={`Remove ${item.name}`}
-                      className="flex h-9 w-9 items-center justify-center rounded-full text-white/40 transition-colors hover:bg-brand/10 hover:text-brand cursor-pointer"
+                      className="flex h-11 w-11 items-center justify-center rounded-full text-white/40 transition-colors hover:bg-brand/10 hover:text-brand cursor-pointer sm:h-9 sm:w-9"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -172,7 +172,7 @@ export function CartClient() {
                       <button
                         onClick={() => setQty(item.id, item.qty - 1)}
                         aria-label="Decrease quantity"
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white cursor-pointer"
+                        className="flex h-11 w-11 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white cursor-pointer sm:h-9 sm:w-9"
                       >
                         <Minus className="h-4 w-4" />
                       </button>
@@ -182,7 +182,7 @@ export function CartClient() {
                       <button
                         onClick={() => setQty(item.id, item.qty + 1)}
                         aria-label="Increase quantity"
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white cursor-pointer"
+                        className="flex h-11 w-11 items-center justify-center rounded-full text-white/70 transition-colors hover:text-white cursor-pointer sm:h-9 sm:w-9"
                       >
                         <Plus className="h-4 w-4" />
                       </button>

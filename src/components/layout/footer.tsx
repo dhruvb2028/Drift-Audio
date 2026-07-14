@@ -123,7 +123,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/60 transition-colors hover:border-brand/40 hover:text-white cursor-pointer"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-white/60 transition-colors hover:border-brand/40 hover:text-white cursor-pointer sm:h-10 sm:w-10"
                 >
                   <Icon className="h-4 w-4" />
                 </a>
@@ -140,7 +140,7 @@ export function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-white/50 transition-colors hover:text-white"
+                      className="inline-block py-1.5 text-sm text-white/50 transition-colors hover:text-white"
                     >
                       {link.label}
                     </Link>
@@ -155,13 +155,13 @@ export function Footer() {
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-sm text-white/40 md:flex-row">
           <p>© 2026 DRIFT AUDIO. Concept portfolio project — not a real store.</p>
           <div className="flex gap-5">
-            <Link href="/privacy" className="hover:text-white">
+            <Link href="/privacy" className="inline-block py-1.5 hover:text-white">
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-white">
+            <Link href="/terms" className="inline-block py-1.5 hover:text-white">
               Terms
             </Link>
-            <Link href="/cookies" className="hover:text-white">
+            <Link href="/cookies" className="inline-block py-1.5 hover:text-white">
               Cookies
             </Link>
           </div>

@@ -39,7 +39,7 @@ export function Navbar() {
           <button
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white md:hidden cursor-pointer"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white md:hidden cursor-pointer"
           >
             <Menu className="h-5 w-5" />
           </button>

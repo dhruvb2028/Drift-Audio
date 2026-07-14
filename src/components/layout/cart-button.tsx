@@ -15,7 +15,7 @@ export function CartButton() {
     <button
       onClick={open}
       aria-label={`Open cart, ${count} items`}
-      className="relative flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+      className="relative flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white cursor-pointer sm:h-10 sm:w-10"
     >
       <ShoppingBag className="h-5 w-5" />
       <AnimatePresence>

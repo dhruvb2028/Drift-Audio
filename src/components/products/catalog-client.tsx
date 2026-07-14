@@ -128,7 +128,7 @@ export function CatalogClient() {
             key={c.id}
             onClick={() => selectCategory(c.id as CategoryId | "all")}
             className={cn(
-              "shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors cursor-pointer",
+              "min-h-11 shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors cursor-pointer sm:min-h-0",
               category === c.id
                 ? "border-brand bg-brand/15 text-white"
                 : "border-white/12 text-white/60 hover:border-white/25 hover:text-white"
@@ -148,7 +148,7 @@ export function CatalogClient() {
           value={price}
           onChange={(e) => setPrice(e.target.value as PriceBucket)}
           aria-label="Filter by price"
-          className="rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-sm text-white focus:border-brand/50 focus:outline-none cursor-pointer"
+          className="min-h-11 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-sm text-white focus:border-brand/50 focus:outline-none cursor-pointer sm:min-h-0"
         >
           {PRICE_BUCKETS.map((b) => (
             <option key={b.value} value={b.value} className="bg-background">
@@ -160,7 +160,7 @@ export function CatalogClient() {
           value={sort}
           onChange={(e) => setSort(e.target.value as Sort)}
           aria-label="Sort products"
-          className="ml-auto rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-sm text-white focus:border-brand/50 focus:outline-none cursor-pointer"
+          className="ml-auto min-h-11 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-sm text-white focus:border-brand/50 focus:outline-none cursor-pointer sm:min-h-0"
         >
           {SORTS.map((s) => (
             <option key={s.value} value={s.value} className="bg-background">

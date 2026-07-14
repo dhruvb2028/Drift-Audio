@@ -97,7 +97,7 @@ export function ColorConfigurator() {
                     aria-label={c.name}
                     aria-pressed={color.hex === c.hex}
                     className={cn(
-                      "relative flex h-10 w-10 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-card transition-all cursor-pointer",
+                      "relative flex h-11 w-11 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-card transition-all cursor-pointer sm:h-10 sm:w-10",
                       color.hex === c.hex
                         ? "ring-brand scale-110"
                         : "ring-white/20 hover:ring-white/40"
